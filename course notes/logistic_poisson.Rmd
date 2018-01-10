@@ -1,0 +1,62 @@
+---
+title: "Logistic and Poisson Regression Course"
+author: "Lisa Oshita"
+date: "12/15/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Generalized Linear models
+
+* assumption of additivity presents a challenge for binary data
+* 3 components
+    + randomness (error) must come from exponential family of distributions (binomial, normal...)
+    + systematic component - linear predictor 
+    + link function that connects the mean of the response to the linear predictor 
+* Logistic Regression
+    + Y ~ Bernoulli(mu) so that E(y) = mu, where 0 < mu < 1 (probability) 
+    + linear predictors are same as linear models 
+    + link function = log( mu / 1 - mu) = log odds 
+    + (transforming mean of the distribution, not the predictors) 
+    + Var(y) = mu(1 - mu) 
+* Poisson Regression 
+    + count data
+    + Y ~ Poisson(mu) so that E(y) = mu, where 0 < mu 
+    + linear predictors same
+    + link function = log(mu) (logging the mean of the distribution that the data is assumed to come from)
+    + Var(y) = mu
+    
+## Binary GLMs 
+* come from trying to model outcomes with only 2 possible values
+    + Bernoulli outcomes - success/failure, survival/not
+    + Binomial outcomes - several exchangeable outcomes for same level of covariate values, can aggregated 0s and 1s into a count of 1s 
+
+## Poisson Regression 
+* poisson distributions: useful for counts/rates (rate: count per some monitoring time) 
+* ex: leek group web traffic 
+    + unit of time = 1 (1 day), poisson distribution estimates number of web hits per day (if t = 24, it would be the number of web hits per hour) 
+    + linear model: NH = b0 + b1JD + e
+    + NH = number of hits 
+    + JD = julian day (day of the year)
+    + b0 = number of hits on Julian day 0, 1970/1/1
+    + b1 = increase in number of hits per day (slope)
+    + e = variation due to everything not measured
+* if extremely large counts - distribution becomes normal 
+* Poisson/log-linear: log(NH) or exp(b0 + b1JD)
+    + Slope: exp(slope): relative increase/decrease in mean per one unit increase/decrease in the regressor
+    + if exponentiated: see if close to 1
+    + if log scale: see if close to 0
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+* 

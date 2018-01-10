@@ -1,0 +1,150 @@
+---
+title: "Reproducible Research"
+author: "Lisa Oshita"
+date: "12/14/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Week 1
+
+### Concepts and Ideas 
+
+* Literate statistical programming
+    + Article as stream of text and code
+    + Literate programs - weaved to produce human-readable documents, tangled to produce machine-readable documents
+    + Ex: Sweave (uses R and LaTex) or knitr
+
+### Structure of Data Analysis
+
+* Define research question 
+* Obtaining/cleaning data 
+    + if it's already preprocessed - understand how
+    + understand source of the data 
+    + may need reformatting, subsampling - record these steps
+    + after cleaning, determine if the data is "good enough"
+* Example:
+    + question: automatically detect emails that are SPAM?
+    + refine the question: can I use quantitative characteristics of emails to classify them as SPAM or HAM?
+    
+#### Creating test/training sets  
+
+```{r}
+library(kernlab)
+data(spam)
+
+# splitting data into train and test sets
+set.seed(3435)
+trainIndicator <- rbinom(4601, size = 1, prob = 0.5)
+table(trainIndicator)
+
+trainSpam <- spam[trainIndicator == 1, ]
+testSpam <- spam[trainIndicator == 0, ]
+```
+
+#### Exploratory data analysis 
+
+```{r}
+names(trainSpam)
+head(trainSpam)
+table(trainSpam$type)
+
+library(ggplot2)
+ggplot(trainSpam, aes(x = type, y = capitalAve)) + 
+  geom_boxplot()
+
+ggplot(trainSpam, aes(x = type, y = log10(capitalAve + 1))) + # added 1 because of all the zeros 
+  geom_boxplot() + 
+  scale_y_continuous(breaks = seq(0, 5, by = 0.5))
+```
+
+```{r}
+# cluster dendrogram
+hCluster <- hclust(dist(t(trainSpam[, 1:57])))
+plot(hCluster)
+
+hClusterUpdated <- hclust(dist(t(log10(trainSpam[, 1:55] + 1))))
+plot(hClusterUpdated)
+```
+
+#### Univariate logistic regression models 
+
+```{r}
+trainSpam$numType <- as.numeric(trainSpam$type) - 1 # converting response to 1s and 0s 
+costFunction <- function(x, y) sum(x != (y > 0.5)) # for use in cv.glm
+cvError <- rep(NA, 55)
+
+library(boot) # for cv.glm function
+for (i in 1:55) {
+  lmFormula <- reformulate(names(trainSpam)[i], response = "numType")
+  glmFit <- glm(lmFormula, family = "binomial", data = trainSpam)
+  cvError[i] <- cv.glm(trainSpam, glmFit, costFunction, k = 2)$delta[2]
+}
+
+names(trainSpam)[which.min(cvError)] # predictor with the minimum cv error
+```
+
+#### Measure of uncertainty 
+
+```{r}
+predictionModel <- glm(numType ~ charDollar, family = "binomial", data = trainSpam) # using best model 
+predictionTest <- predict(predictionModel, testSpam) # getting predictions from test set
+predictedSpam <- rep("nonSpam", nrow(testSpam))
+predictedSpam[predictionModel$fitted > 0.5] <- "Spam" # classify as spam for those with pr > 0.5
+
+# classification table
+table(predictedSpam, testSpam$type)
+# error rate
+(61 + 458) / (1346 + 458 + 61 + 449)
+```
+
+#### Synthesize/write-up results
+
+* lead with the question
+* summarize analysis into the story (only include analysis if it's needed for the story, if it's needed to address a challenge)
+* order analysis according to the story, not chronologically
+* include figures
+
+
+## Week 2
+
+#### knitr
+
+* Global options: if you want to set options for every chunk of code, that are different from the defaults: 
+    - eg: opts_chunk$set(echo = FALSE, results = "hide")
+    - can override global options by specifying echo = TRUE in individual code chunks
+    - output: results: "hide" or "asis", echo = TRUE or FALSE
+    - figures: fig.height: numeric, fig.width: numeric
+* Caching computations: all chunks need to be re-computed every time you re-knit a file, can be problematic if a particular chunk takes a long time to compute
+    - cache = TRUE can be set on a chunk by chunk basis to store the results
+    - if data/code/anything external changes, need to rerun the cached code chunks
+
+## Week 3
+
+* Reproducible research checklist
+    - teach a computer to do something - instead of manually saving data from a website, use download.file()
+    - do not save output until the end
+    - always set your seed (set.seed())
+    
+## Week 4
+
+Caching computations (cacher package)
+* cacher evaluates code written in files and stores intermediate results in key-value database
+    - r expressions are given SHA-1 hash values so changes can be tracked
+    - cacher package: stores source file, cached data objects, metadata
+    - package file is zipped/can be distributed
+    - readers can unzip and view contents with cacher package
+* cloning an analysis:
+    - local directories created
+    - source code/metadata downloaded
+    - data objects not downloaded by default
+    - references to data objects are downloaded and corresponding data can be lazy-loaded on demand
+* summary: 
+    - can be used by authors to create cache packages from data analyses for distribution
+    - readers can use package to inspect others' analyses by examining cached computations
+    - efficiently only loads those data objects that are needed (lazy-loading)
+    
+    

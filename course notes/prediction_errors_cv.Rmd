@@ -1,0 +1,51 @@
+---
+title: "Practical Machine Learning"
+author: "Lisa Oshita"
+date: "12/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+* trade-offs with accuracy: interpretability, scalability, simplicity, speed
+* In/out of sample errors
+    + In sample error: error rate for data you used to build the predictor on (resubstitution error)
+    + out of sample error: error rate for new data
+    + in sample error < out of sample (overfitting)
+* prediction study design (steps)
+    + define question
+    + split data - training/test/validation 
+    + on training set: pick features (use cv)
+    + on training set: pick prediction function (use cv) 
+    + if no validation, apply once to test set 
+    + if validation, apply to test set and refine, apply to 1x validation
+* General rule of thumb
+    + Large data set: 60\% training, 20\% test, 20\% validation
+    + Medium: 60\% training, 40\% test
+    + small: do cv, report caveat of small sample size
+* principles:
+    + randomly sample test/training sets
+    + subsets should be diverse
+* basic terms: binary predictors
+    + true positive, true negative
+    + false positive (incorrectly identified), false negative (incorrectly rejected) (terms can be represented in a 2x2 table)
+    + key terms
+        1. Pr(positive test | disease): sensitivity (TP / TP + FN)
+        2. Pr(negative test | no disease): specificity (TN / FP + TN)
+        3. Pr(disease | positive test): Positive predicted value (TP / TP + FP)
+        4. Pr(no disease | negative test): Negative predicted value (TN / TN + FN)
+        5. Pr(correct outcome): accuracy (TP + TN / TP + FP + FN + TN)
+    + for continuous predictors: MSE or RMSE 
+* ROC curve (binary classification) - receiver operating characteristics
+    + true positives on x-axis (sensitivity), false positives on y-axis (1 - true positives), plot all possible cut-off points
+    + each cut-off point will give you a certain false positive probability and true positive probability
+    + quantify how well prediction algorithm predicts - calculate area under curve (AUC), larger the area, the better the prediction algorithm 
+    + if AUC = 0.5: random guessing, if AUC = 1: perfect classifier, if AUC > 0.8 - "good"
+    + 45 degree line will correspond to just guessing 
+* cross-validation
+    + approach: use training set, split into training/test sets, build model on training set, evaluate on test set, repeat and average estimate errors 
+    + used for: picking variables to include in the final model, picking the type of prediction function to use, picking parameters in the prediction funciton, comparing different predictors
+    + k-fold cv: larger k = less bias but more variance, smaller k = more bias but less variance 
+    
