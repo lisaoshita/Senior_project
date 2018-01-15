@@ -95,11 +95,73 @@ sqrt(sum((combPredV - validation$wage) ** 2))
     + subsampling into training/testing can be more complicated 
     + goal: predict one/more observations into the future
 
+```{r}
+# forecasting with google data
+library(quantmod)
+from.dat <- as.Date("01/01/08", format = "%m/%d/%y")
+to.dat <- as.Date("12/31/13", format = "%m/%d/%y")
 
+getSymbols("GOOG", src = "google", from = from.dat, to = to.dat)
+head(GOOG)
+GOOG <- subset(GOOG, select = -c(GOOG.Volume)) # removing column with NA
 
+mGOOG <- to.monthly(GOOG)
+googOpen <- Op(mGOOG)
+ts1 <- ts(googOpen, frequency = 12) # creating time series object
+plot(ts1, xlab = "Years + 1", ylab = "GOOG") # displaying monthly opening prices over period of 7 yrs
+```
 
+```{r}
+# decompose time series into parts (trends, seasonal patterns, or cyclic)
+plot(decompose(ts1), xlab = "Years + 1")
+# indicates an upward trend + seasonal pattern + random pattern is present 
+```
 
+```{r}
+# training/testing
+ts1Train <- window(ts1, start = 1, end = 5) # starts at time point 1, ends at 5
+ts1Test <- window(ts1, start = 5, end = (7 - 0.01))
+```
 
+```{r}
+library(forecast)
+# simple moving average
+plot(ts1Train)
+lines(forecast::ma(ts1Train, order = 3), col = "red")
 
+# exponential smoothing
+ets1 <- ets(ts1Train, model = "MMM")
+fcast <- forecast(ets1)
+plot(fcast); lines(ts1Test, col = "red")
 
+accuracy(fcast, ts1Test)
+```
 
+#### Unsupervised prediction
+
+* when you don't know labels for prediction
+* to build a predictor
+    + create clusters, name clusters, build predictors for clusters
+    + in new data set, predict clusters
+
+```{r}
+data(iris) 
+inTrain_iris <- createDataPartition(y = iris$Species, p = 0.7, list = FALSE)
+training_iris <- iris[inTrain_iris, ]
+testing_iris <- iris[-inTrain_iris, ]
+
+# perform k-means clustering
+kMeans1 <- kmeans(subset(training_iris, select = -c(Species)), centers = 3) # ignoring species clusters
+training_iris$clusters <- as.factor(kMeans1$cluster)
+qplot(Petal.Width, Petal.Length, colour = clusters, data = training_iris)
+# compare to real labels 
+table(kMeans1$cluster, training_iris$Species)
+
+# build predictor 
+modFit <- train(clusters~., data = subset(training_iris, select = -c(Species)), method = "rpart")
+table(predict(modFit, training_iris), training_iris$Species)
+
+# apply on test data 
+testClusterPred <- predict(modFit, testing_iris)
+table(testClusterPred, testing_iris$Species) # indicates that cluster 1 and 3 tend to get mixed up 
+```
