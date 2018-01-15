@@ -1,0 +1,105 @@
+---
+title: "Regularized Regression, combining predictors"
+author: "Lisa Oshita"
+date: "1/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Regularized regression 
+
+* fit model, penalize (shrink) large coefficients of some predictors
+* pros:
+    + can help with bias/variance tradeoff
+    + can help with model selection
+* cons:
+    + may be computationally inefficient
+    + doesn't perform as well as random forests and boosting
+* model selection approach: split samples
+    + no method is better when data/computation time permits it
+    + approach: divide into training/test/validation, treat validation as test data, train all competing models on train data and pick best one on validation, to appropriately assess performance on new data apply to test data, re-split and re-perform steps 1-3
+    + common problems: limited data, computational complexity
+* decomposing expected prediction error
+    + = irreducible error + bias^2 + variance
+* regularization for regression
+    + if betas are unconstrained - they may "explode", susceptible to high variance
+    + to control variance - regularize/shrink coefficients - PRSS: penalized form of sum of squares
+    + penalty reduces: complexity, variance, respects the structure of the problem
+* ridge regression - tuning parameter (lambda)
+    + lambda controls size of coefficients
+    + controls amount of regularization
+    + as lambda appraoches 0, obtain least square solution 
+    + as lambda approaches infinity, all betas go to 0
+    + choosing parameter - done with cross validation, other techniques, lasso 
+
+#### Combining predictors
+
+* combine classifiers by averaging/voting, classifiers can be different (regression with boost)
+* improves accuracy, reduces interpretability 
+* boosting, bagging, random forests are variants of this theme
+
+```{r}
+# creating training, testing, validation sets
+library(ISLR); data(Wage); library(ggplot2); library(caret)
+Wage <- subset(Wage, select = -c(logwage))
+
+inBuild <- createDataPartition(y = Wage$wage, p = 0.7, list = FALSE)
+validation <- Wage[-inBuild, ]
+buildData <- Wage[inBuild, ]
+
+inTrain <- createDataPartition(y = buildData$wage, p = 0.7, list = FALSE)
+training <- buildData[inTrain, ]
+testing <- buildData[-inTrain, ]
+```
+
+```{r}
+mod1 <- train(wage~., method = "glm", data = training) # linear model
+mod2 <- train(wage~., method = "rf", data = training, trControl = trainControl(method = "cv"), number = 3) 
+# random forests
+
+pred1 <- predict(mod1, testing); pred2 <- predict(mod2, testing)
+qplot(pred1, pred2, colour = wage, data = testing)
+```
+
+```{r}
+# model that combines predictors using test set 
+predDF <- data.frame(pred1, pred2, wage = testing$wage) 
+combModFit <- train(wage~., method = "gam", data = predDF)
+combpred <- predict(combModFit, predDF)
+
+# errors
+sqrt(sum((pred1 - testing$wage) ** 2)) # performance on test set for model 1
+sqrt(sum((pred2 - testing$wage) ** 2)) # performance on test set for model 2
+sqrt(sum((combpred - testing$wage) ** 2)) # performance for combined model 
+
+# predicting on validation set 
+pred1V <- predict(mod1, validation) # prediction of first and second model on validation data 
+pred2V <- predict(mod2, validation)
+predVDF <- data.frame(pred1 = pred1V, pred2 = pred2V)
+combPredV <- predict(combModFit, predVDF) # predict using combined model 
+
+# errors
+sqrt(sum((pred1V - validation$wage) ** 2))
+sqrt(sum((pred2V - validation$wage) ** 2))
+sqrt(sum((combPredV - validation$wage) ** 2))
+```
+
+#### Forecasting
+
+* what's different
+    + data is dependent on time
+    + specific pattern types: trends, seasonal patterns, cycles
+    + subsampling into training/testing can be more complicated 
+    + goal: predict one/more observations into the future
+
+
+
+
+
+
+
+
+
