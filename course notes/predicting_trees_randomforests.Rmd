@@ -95,16 +95,89 @@ lines(1:155, apply(ll, 2, mean), col = "red", lwd = 2) # average of all loess cu
 # can also bag in caret
 ```
 
+#### Random Forests 
 
+* (extension of bagging)
+* bootstrap samples, at each split - bootstrap the variables 
+* grow multiple trees and vote
+* pros: accurate 
+* cons: speed, interpretability, overfitting
 
+```{r}
+library(randomForest)
+modFit1 <- caret::train(Species~., data = training, method = "rf", prox = TRUE)
+modFit1
+randomForest::getTree(modFit1$finalModel, k = 2) # k = 2, second tree
+# each row corresponds to particular split
 
+irisP <- classCenter(training[, c(3,4)], training$Species, modFit1$finalModel$prox)
+irisP <- data.frame(irisP); 
+irisP$Species <- rownames(irisP)
 
+qplot(Petal.Width, Petal.Length, col = Species, data = training) + 
+  geom_point(aes(x = Petal.Width, y = Petal.Length, col = Species), size = 5, shape = 4, data = irisP)
+# x's show the column centers
 
+# predicting new values
+pred <- predict(modFit1, testing) 
+testing$predRight <- pred == testing$Species
+table(pred, testing$Species)
 
+# plotting new predictions
+qplot(Petal.Width, Petal.Length, colour = predRight, data = testing, main = "newdata Predictions")
+```
 
+#### Boosting
 
+* take possibly weak predictors, weight them and add up, get a stronger predictor
+* basic idea:
+    + start with a set of k classifiers (all possible trees, regression models, all possible cutoffs)
+    + create a classifier that combines classification functions
+    + goal: minimize error, iterative (select one predictor at each step), calculate weights based on errors, upweight missed classifications and select h 
+* in R 
+    + gbm, mboost, ada, gamBoost - most available in caret package
 
+```{r}
+# working with wage data
+library(ISLR); library(ggplot2); library(caret)
+data(Wage)
+Wage <- subset(Wage, select = -c(logwage))
+inTrain1 <- createDataPartition(y = Wage$wage, p = 0.7, list = FALSE) 
+training1 <- Wage[inTrain1, ]
+testing1 <- Wage[-inTrain1, ]
 
+# fit the model
+modFit2 <- train(wage ~., method = "gbm", data = training1, verbose = FALSE)
+print(modFit2)
+
+qplot(predict(modFit2, testing1), wage, data = testing1)
+```
+
+#### Model-based predictions
+
+* basic idea: assume data follows probabilistic model, use bayes' theorem to identify optimal classifiers
+* pros:
+    + take advantage of structure of the data (if it follows a specific distribution)
+    + computationally convenient
+    + reasonably accurate on real problems 
+* cons:
+    + make additional assumptions about the data
+    + when model is incorrect you may get reduced accuracy 
+* model based approach 
+    + apply bayes' thm, calculate the probability that k belongs to a class, given predictors observed (Pr(Y = k | X = x))
+    
+```{r}
+# working with iris data
+modla <- train(Species ~., data = training, method = "lda") # linear discriminant analysis
+modlb <- train(Species ~., data = training, method = "nb") # naive bayes
+plda <- predict(modla, testing)
+pnb <- predict(modlb, testing)
+table(plda, pnb)
+
+# comparison of results
+equalPredictions <- (plda == pnb)
+qplot(Petal.Width, Sepal.Width, colour = equalPredictions, data = testing)
+```
 
 
 
