@@ -114,6 +114,8 @@ predict(modFit, newdata = test)
 * best for non-linear models 
 * for given test observation, record the class predicted by each of the B trees, take majority vote
     + overall prediction is most commonly occuring majority class among the B predictions
+* out of bag error (cross-validation for error is not needed)
+* RSS (for regression), Gini Index (classification) can give summary of importance of each predictor
 
 ```{r}
 # example with continuous prediction (bagged loess)
@@ -133,9 +135,13 @@ points(iris$Sepal.Length, predict(treebag, predictors), pch = 19, col = "blue")
 
 #### Random Forests
 
-* extension of bagging 
 * usually top performing algorithms (along with boosting) in ML competitions
 * difficult to interpret, but very accurate
+* extension of bagging but with every bootstrapped sample, predictors are bootstrapped at each split 
+    + predictor are not resampled from all possible predictors, RF forces each split to only consider a subset of all preditors 
+* number of trees (B) to fit is not a critical parameter (too many will not lead to overfitting)
+    + use value of B with low error 
+    + same with bagging
 
 ```{r}
 rfFit <- train(Species ~., data = train, method = "rf", prox = TRUE)
@@ -156,12 +162,66 @@ qplot(Petal.Width, Petal.Length, colour = predictRight, data = test, main = "New
 #### Boosting
 
 * boosting libraries in R: gbm (booting with trees), mboost (model based boosting), ada (statistical boosting based on additive logistic regression), gamBoost (boosting generalized additive models)
+* similar to bagging, but boosting does not invovle bootstrap resampling and trees are grown sequentially - each tree fit on modified version of original data and grown using information from previously grown trees
+    + build model from training data, build second model that attempts to correct errors of the first model
+* 3 tuning parameters
+    + number of trees (B), boosting can overfit if B is too large, use cross-validation to select B, or optimal M - monitor prediction risk as function of M on validation sample, M that minimizes this risk is taken to be the estimate of M 
+    + shrinkage parameter (lambda), controls rate at which boosting learns, small positive number (0.01, 0.001), small lambda can require large B in order to achieve good performance (smaller lambda - more shrinkage, results in larger training risk)
+    + number of splits in the tree/interaction depth (d), controls complexity, often d = 1 works well (single split)
+* AdaBoost - best for weak learners + binary classification models 
+    + sequentially apply weak algorithm to repeatedly modified versions of the data, producing weak classifiers. Predictions from all are combined through weighted majority vote to produce final prediction. Weights give greater influence to more accurate classifiers 
+    + over the iterations, observations that are difficult to classify correctly receive increasing influence - each successive classifier forced to concentrate on training observations missed by previous classifiers 
 
 ```{r}
+# predicting quantitative response
 boostMod <- train(Petal.Width ~ ., method = "gbm", data = train, verbose = FALSE)
 print(boostMod)
 
 qplot(predict(boostMod, testing), Petal.Width, data = test)
+
+# predicting qualitative response
+boostIris <- gbm(Species ~ ., data = train, distribution = "multinomial", 
+                 n.trees = 5000, interaction.depth = 4)
+summary(boostIris)
+
+# predictions
+speciesPredict <- predict(boostIris, newdata = test, n.trees = 5000, type = "response")
+pred_class <- data.frame(predictions = apply(speciesPredict, 1, which.max))
+
+pred_class$species <- NA
+pred_class$species[pred_class$predictions == 1] <- "setosa"
+pred_class$species[pred_class$predictions == 2] <- "versicolor"
+pred_class$species[pred_class$predictions == 3] <- "virginica"
+
+test$predictRight2 <- pred_class$species == test$Species
+table(pred_class$species, test$Species)
+```
+
+```{r}
+# example from textbook 
+library(gbm)
+set.seed(1)
+data(Boston, package = "MASS")
+trainBoston = sample(1:nrow(Boston), nrow(Boston)/2)
+
+boostBoston <- gbm(medv ~., data = Boston[trainBoston, ], distribution = "gaussian",
+                   n.trees = 5000, interaction.depth = 4) # gradient boosted model, default lambda = 0.001
+summary(boostBoston)
+
+par(mfrow=c(1,2)) 
+plot(boostBoston ,i="rm"); plot(boostBoston ,i="lstat")
+
+# predictions
+boostPred <- predict(boostBoston, newdata = Boston[-trainBoston, ], n.trees = 5000)
+mean((boostPred - Boston[-trainBoston, ]$medv)^2) # MSE
+
+# boosted model with different lambda 
+boostBoston2 <- gbm(medv ~., data = Boston[trainBoston, ], distribution = "gaussian", 
+                    n.trees = 5000, interaction.depth = 4, shrinkage = 0.2, verbose = FALSE)
+summary(boostBoston2)
+# predictions
+boostPred2 <- predict(boostBoston2, newdata = Boston[-trainBoston, ], n.trees = 5000)
+mean((boostPred2 - Boston[-trainBoston, ]$medv)^2)
 ```
 
 #### Model based predictions
@@ -178,7 +238,16 @@ table(ldaPredict, nbPredict)
 ```
 
 
+#### Feature engineering 
 
+* process of transforming raw data into features that better represent the underlying problem to the predictive models - resulting in improved accuracy 
+* feature extraction - automatically reducing dimensionality of observations into a smaller set that can be modelled 
+    + PCA, unsupervised clustering methods 
+* feature selection - automatically selecting subset that are most useful to a problem 
+    + may use rank/scoring method to select (like correlation coefficient)
+* feature construction 
+    + tabular data - aggregating/combining or decomposing/splitting features to create new features
+    + textual data - devising document/content specific indicators... 
 
 
 
