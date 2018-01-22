@@ -1,0 +1,34 @@
+---
+title: "Load data"
+author: "Lisa Oshita"
+date: "1/21/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+dir <- file.path(getwd(),"data")
+
+# summary stats of users' age groups, country destination, gender...
+age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
+str(age_gender)
+unique(age_gender$country_destination)
+
+# summary stats of destination countries
+countries <- read.csv(file.path(dir, "countries.csv"))
+str(countries)
+
+# 213,451 userss
+train_users <- read.csv(file.path(dir, "train_users_2.csv"))
+str(train_users)
+```
+
+```{r}
+library(ggplot2)
+ggplot(train_users, aes(x = gender, colour = country_destination, fill = country_destination)) + 
+  geom_bar()
+```
+
