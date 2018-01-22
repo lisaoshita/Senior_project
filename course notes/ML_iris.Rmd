@@ -248,6 +248,13 @@ table(ldaPredict, nbPredict)
 * feature construction 
     + tabular data - aggregating/combining or decomposing/splitting features to create new features
     + textual data - devising document/content specific indicators... 
+* iterative process
+    + brainstorm features: view data, study feature engineering on similar problems
+    + devise features
+    + select features: use feature importance scorings/selection methods to prepare one/more "views" for your model to operate on
+    + evaluate model
+* examples: 
+    + decompose categorical attributes, decompose date times (hour of the day...)
 
 
 
