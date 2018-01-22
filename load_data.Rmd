@@ -12,23 +12,64 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 dir <- file.path(getwd(),"data")
 
-# summary stats of users' age groups, country destination, gender...
-age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
-str(age_gender)
-unique(age_gender$country_destination)
-
 # summary stats of destination countries
 countries <- read.csv(file.path(dir, "countries.csv"))
 str(countries)
-
-# 213,451 userss
-train_users <- read.csv(file.path(dir, "train_users_2.csv"))
-str(train_users)
 ```
 
 ```{r}
-library(ggplot2)
-ggplot(train_users, aes(x = gender, colour = country_destination, fill = country_destination)) + 
-  geom_bar()
+#===========================================================================
+# age_gender data 
+#===========================================================================
+# AU: Australia, CA: Canada, DE: Germany, ES: Spain, FR: France, 
+# GB: United Kingdom, IT: Italy, NL: Netherlands, PT: Portugal
+age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
+str(age_gender)
+#===========================================================================
+# function to plot pop by age range for each country
+plot_age <- function(country) {
+  ggplot(subset(age_gender, country_destination == country), 
+         aes(x = age_bucket, y = population_in_thousands, fill = gender)) + 
+    geom_bar(stat = "identity") + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+    scale_x_discrete("Age Range") + 
+    scale_y_continuous("Population (thousands)") + 
+    ggtitle(country)
+}
+purrr::map(unique(age_gender$country_destination), ~plot_age(.))
+#===========================================================================
+library(dplyr); library(magrittr)
+# proportion of males/females visiting each country
+age_gender %>% 
+  group_by(country_destination) %>%
+  summarise(total_pop = sum(population_in_thousands),
+            male = sum(population_in_thousands[gender == "male"])/total_pop,
+            female = sum(population_in_thousands[gender == "female"])/total_pop) %>% 
+  arrange(desc(total_pop))
 ```
 
+```{r}
+#===========================================================================
+# train_users data 
+#===========================================================================
+# 213,451 userss
+train_users <- read.csv(file.path(dir, "train_users_2.csv"))
+#===========================================================================
+# date account created
+# separating year & month of date account created
+train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
+train_users$yearCreated <- format(train_users$dateCreated, "%Y")
+train_users$monthCreated <- format(train_users$dateCreated, "%m")
+
+ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) + 
+  geom_histogram(stat = "count") + 
+  scale_y_continuous("number accounts created") + 
+  scale_x_discrete("year account created") + 
+  ggtitle("Number of accounts created per year")
+#===========================================================================
+# date first booking
+# separating year & month of date of first book 
+train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
+train_users$firstBookYear <- format(train_users$firstBook, "%Y")
+train_users$firstBookMonth <- format(train_users$firstBook, "%m")
+```
