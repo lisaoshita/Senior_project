@@ -17,19 +17,20 @@ countries <- read.csv(file.path(dir, "countries.csv"))
 str(countries)
 ```
 
+#### Age_gender data
+
 ```{r}
-#===========================================================================
-# age_gender data 
-#===========================================================================
 # AU: Australia, CA: Canada, DE: Germany, ES: Spain, FR: France, 
 # GB: United Kingdom, IT: Italy, NL: Netherlands, PT: Portugal
 age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
 str(age_gender)
-#===========================================================================
+
+# ===========================================================================
+
 # function to plot pop by age range for each country
 plot_age <- function(country) {
   ggplot(subset(age_gender, country_destination == country), 
-         aes(x = age_bucket, y = population_in_thousands, fill = gender)) + 
+         aes(x = reorder(age_bucket), y = population_in_thousands, fill = gender)) + 
     geom_bar(stat = "identity") + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
     scale_x_discrete("Age Range") + 
@@ -37,9 +38,11 @@ plot_age <- function(country) {
     ggtitle(country)
 }
 purrr::map(unique(age_gender$country_destination), ~plot_age(.))
-#===========================================================================
-library(dplyr); library(magrittr)
+
+# ===========================================================================
+
 # proportion of males/females visiting each country
+library(dplyr); library(magrittr)
 age_gender %>% 
   group_by(country_destination) %>%
   summarise(total_pop = sum(population_in_thousands),
@@ -48,13 +51,16 @@ age_gender %>%
   arrange(desc(total_pop))
 ```
 
+#### train_users data
+
 ```{r}
-#===========================================================================
-# train_users data 
-#===========================================================================
-# 213,451 userss
+# 213,451 users
 train_users <- read.csv(file.path(dir, "train_users_2.csv"))
-#===========================================================================
+# converting all factor vars to character
+train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
+
+# ===========================================================================
+
 # date account created
 # separating year & month of date account created
 train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
@@ -66,10 +72,67 @@ ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) +
   scale_y_continuous("number accounts created") + 
   scale_x_discrete("year account created") + 
   ggtitle("Number of accounts created per year")
-#===========================================================================
+
+# ===========================================================================
+
 # date first booking
 # separating year & month of date of first book 
 train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
 train_users$firstBookYear <- format(train_users$firstBook, "%Y")
 train_users$firstBookMonth <- format(train_users$firstBook, "%m")
 ```
+
+```{r}
+# age 
+ggplot(train_users, aes(x = age)) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 100))
+median(train_users$age, na.rm = TRUE)
+# max age = 2014
+# median age = 34
+# mean age = 49.7
+# 87990 missing ages (41.2%)
+```
+
+```{r}
+# function to plot bar graphs of categorical vars 
+plot_cat <- function(var) {
+  ggplot(train_users, aes(x = train_users[[var]])) + 
+    geom_bar() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    ggtitle(var) + 
+    scale_x_discrete(var) 
+}
+# ===========================================================================
+# bar plots of all factor vars
+factorvars <- c("gender", "signup_method", "language", "affiliate_channel", "affiliate_provider",
+                "first_affiliate_tracked", "signup_app", "first_device_type", "country_destination")
+purrr::map(factorvars, ~plot_cat(.))
+```
+
+```{r}
+# missing values 
+# function to count + find proportion of missing vals
+count_NA <- function(var) {
+  if (class(train_users[[var]]) == "numeric") {
+      missing <- data.frame(var = var, 
+                            total = sum(is.na(train_users[[var]])),
+                            proportion = sum(is.na(train_users[[var]])) / nrow(train_users)
+                            )
+  } else {
+    missing <- data.frame(var = var, 
+                          total = sum(train_users[[var]] == ""),
+                          proportion = sum(train_users[[var]] == "") / nrow(train_users)
+                          )
+  }
+  return(missing)
+}
+# ===========================================================================
+# replacing unknowns with "" in gender var
+train_users$gender <- stringr::str_replace(train_users$gender, pattern = "-unknown-", 
+                                           replacement = "")
+# ===========================================================================
+purrr::map_df(c("date_first_booking", "gender", "age", "first_affiliate_tracked"), ~count_NA(.))
+  
+```
+
