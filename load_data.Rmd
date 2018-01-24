@@ -136,3 +136,38 @@ purrr::map_df(c("date_first_booking", "gender", "age", "first_affiliate_tracked"
   
 ```
 
+```{r}
+# ===========================================================================
+# boosting 
+# ===========================================================================
+library(gbm)
+
+# subset data 
+traindat <- subset(train_users, select = c(gender, age, signup_method, signup_flow, signup_app, 
+                       affiliate_channel, affiliate_provider, first_affiliate_tracked, 
+                       first_device_type, first_browser, country_destination))
+
+# convert character vars to factors (gbm doesn't work with characters)
+traindat <- dplyr::mutate_if(traindat, is.character, as.factor)
+
+# fit model 
+boostAirbnb <- gbm(country_destination ~ ., data = traindat, 
+                   distribution = "multinomial", n.trees = 5, interaction.depth = 4)
+# ===========================================================================
+# predictions - returns probabilities
+predictions <- predict(boostAirbnb, newdata = traindat, n.trees = 5, type = "response")
+
+# assigns predictions to a class
+train_users$predictions <- apply(predictions, 1, which.max)
+levels <- data.frame(countries = levels(train_users$country_destination), num = 1:12)
+train_users$predictions[train_users$predictions == 8] <- "NDF"
+train_users$predictions[train_users$predictions == 12] <- "US"
+
+# accuracy 
+sum(train_users$predictions == train_users$country_destination) / nrow(train_users)
+```
+
+
+
+
+
