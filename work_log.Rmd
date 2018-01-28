@@ -1,0 +1,39 @@
+---
+title: "Work Log"
+author: "Lisa Oshita"
+date: "1/25/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Winter break/Week 1
+
+* Data science courses on coursera: 
+    + reproducible research
+    + logistic and poisson regression courses
+    + machine learning
+* took notes in r markdown on all courses 
+
+#### Week 2
+
+* Continued learning about machine learning algorithms
+    + coursera 
+    + text readings 
+
+#### Week 3 
+
+* Applied ml algorithms to iris data set 
+* Exploratory analysis on Airbnb's data sets (train_users, age_gender)
+    + turned date variables into date time vars 
+    + plotted categorical vars as bar charts 
+    + looked at missing values 
+* applied boosting model with all variables data, achieved 62% accuracy, only predicted US and NDF
+
+#### Week 4 
+
+* Exploratory analysis on all of Airbnb's data sets
+    + sampled sessions data 
+
