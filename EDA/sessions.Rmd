@@ -1,0 +1,41 @@
+---
+title: "Sessions"
+author: "Lisa Oshita"
+date: "1/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# load data
+dir <- file.path(getwd(),"data")
+# full data - 1,048,575 observations
+# sessionsFull <- read.csv(file.path(dir, "sessions.csv"))
+# # ===========================================================================
+# # sampling sessions data 
+# # ===========================================================================
+# # function to sample rows for each unique user_id subset 
+# sampleSessions <- function(user) {
+#   # subsetting data for each user
+#   userSubset <- subset(sessionsFull, sessionsFull$user_id == user) 
+#   # sample 10% of each subset
+#   sampled <- dplyr::sample_frac(tibble::as_tibble(userSubset), size = 0.10, replace = FALSE)
+#   return(sampled)
+# }
+# # iterate over each unique user_id, apply sampleSessions function, append to data frame
+# sessions <- purrr::map_dfr(unique(sessionsFull$user_id), ~sampleSessions(.))
+# # saving sampled sessions 
+# write.csv(sessions, file = "sessionsSample.csv")
+
+# load sampled data 
+sessions <- read.csv(file.path(dir, "sessionsSample.csv"))
+sessions <- sessions[, -1] # removing extra X column 
+```
+
+```{r}
+
+```
+
