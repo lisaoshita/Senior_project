@@ -37,7 +37,9 @@ train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
 ```
 
 ```{r}
+# ===========================================================================
 # date account created
+# ===========================================================================
 # separating year & month of date account created
 train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
 train_users$yearCreated <- format(train_users$dateCreated, "%Y")
@@ -48,11 +50,15 @@ ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) +
   scale_y_continuous("number accounts created") + 
   scale_x_discrete("year account created") + 
   ggtitle("Number of accounts created per year")
+
 # number of accounts created increases from 2010 - 2014
+# accounts created up to June 2014
 ```
 
 ```{r}
+# ===========================================================================
 # date first booking
+# ===========================================================================
 # separating year & month of date of first book 
 train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
 train_users$firstBookYear <- format(train_users$firstBook, "%Y")
@@ -60,16 +66,52 @@ train_users$firstBookMonth <- format(train_users$firstBook, "%m")
 
 # number of users who did not book 
 sum(is.na(train_users$firstBook))/nrow(train_users)
+
 # 58.3% of users did not book (NDF)
+
+# ===========================================================================
+# how long it took users to book (after creating account)
+train_users$time_until_book <- train_users$firstBook - train_users$dateCreated
+
+# distribution of time until first booking 
+ggplot(train_users, aes(x = time_until_book)) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(-10, 400))
+
+median(train_users$time_until_book, na.rm = TRUE)
+mean(train_users$time_until_book, na.rm = TRUE)
+max(train_users$time_until_book, na.rm = TRUE)
+min(train_users$time_until_book, na.rm = TRUE)
+# median: 3 days 
+# mean: 44.3625 days 
+# max: 365 days 
+# min: -349 days (why negative?)
+# ===========================================================================
+# time series plot of date first book 
+firstbookDate <- train_users %>% select(date_first_booking) %>% filter(date_first_booking != "")
+firstbookDF <- data.frame(date = names(table(firstbookDate$date_first_booking)),
+                          count = unname(table(firstbookDate$date_first_booking)))
+firstbookDF$date <- as.Date(firstbookDF$date, format="%Y-%m-%d")
+ggplot(firstbookDF, aes(x = date, y = count.Freq)) + 
+  geom_point() + 
+  geom_smooth() + 
+  scale_x_date(date_breaks = "6 months") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# seasonal pattern?
+# spike in bookings between 3/2014 and 9/2014 (summer months?)
+# spike appears in september for every year 
 ```
 
 ```{r}
+# ===========================================================================
 # age 
+# ===========================================================================
+# histogram of ages (up to 100)
 ggplot(train_users, aes(x = age)) + 
   geom_histogram() + 
   scale_x_continuous(limits = c(0, 100))
-median(train_users$age, na.rm = TRUE)
-# max age = 2014
+
+# max age = 2014 (quite a few outliers)
 # median age = 34
 # mean age = 49.7
 # 87990 missing ages (41.2%)
@@ -92,18 +134,45 @@ train_users %>%
 ```
 
 ```{r}
-# function to plot bar graphs of categorical vars 
+# ===========================================================================
+# other categorical vars 
+# ===========================================================================
+# indicator variable for if a user booked a trip
+train_users$book <- 1
+train_users$book[is.na(train_users$firstBook)] <- 0
+# ===========================================================================
+# function to plot bar graphs of categorical vars, color coded by whether or not the user booked
 plot_cat <- function(var) {
-  ggplot(train_users, aes(x = train_users[[var]])) + 
+  ggplot(train_users, aes(x = train_users[[var]], fill = as.factor(book))) + 
     geom_bar() + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     ggtitle(var) + 
     scale_x_discrete(var) 
 }
 factorvars <- c("gender", "signup_method", "language", "affiliate_channel", "affiliate_provider",
-                "first_affiliate_tracked", "signup_app", "first_device_type", "country_destination")
+                "first_affiliate_tracked", "signup_app", "first_device_type", "first_browser")
 purrr::map(factorvars, ~plot_cat(.))
-
+# uneven distribution for all categorical vars 
+# ===========================================================================
+# function to get the proportion of users in each level of categorical vars that booked a trip 
+proportionBooked <- function(var) {
+  train_users %>% 
+    group_by(train_users[[var]]) %>%
+    summarise(n = n(),proportionBooked = sum(book == 1)/n()) %>% 
+    arrange(desc(proportionBooked))
+}
+purrr::map(factorvars, ~proportionBooked(.))
+# signup method: only 18% of users who signed up with google booked a trip
+#                much less than those who signed up with basic/FB
+# affiliate channel: users of affiliate channel - content - book less than any other 
+# affiliate provider: users of craigslist, direct, google book more than others
+#               users of meetup, gsp, wayn book the least
+# first affiliate tracked: users of marketing, untracked, linked book the most
+#               users of NA, local ops book the least 
+# signup app: Users of web book the most, users of android and iOS book the least 
+# first device type: users of mac desktop/desktop/windows desktop book the most 
+#               users of android phone book the least 
+# ===========================================================================
 # proportion travelling to each country  
 train_users %>% 
   group_by(signup_method) %>% 
@@ -124,7 +193,9 @@ train_users %>%
 ```
 
 ```{r}
+# ===========================================================================
 # missing values 
+# ===========================================================================
 # function to count + find proportion of missing vals
 count_NA <- function(var) {
   if (class(train_users[[var]]) == "numeric") {
@@ -149,10 +220,6 @@ train_users$gender <- stringr::str_replace(train_users$gender,
 purrr::map_df(c("gender", "age", "first_affiliate_tracked"), ~count_NA(.))
 
 # ===========================================================================
-
-# indicator variable for if a user booked a trip
-train_users$book <- 1
-train_users$book[is.na(train_users$firstBook)] <- 0
 # indicator variable for if age is missing 
 train_users$provideAge <- 1
 train_users$provideAge[is.na(train_users$age)] <- 0
@@ -162,7 +229,7 @@ train_users %>%
   summarise(n = n(), propBook = sum(book == 1)/n)
 # 23% of users who don't include their age book 
 # 55% of users who do include their age book 
-
+# ===========================================================================
 # indicator variable for if user provided gender
 train_users$provideGender <- 1
 train_users$provideGender[train_users$gender == ""] <- 0
@@ -175,13 +242,16 @@ train_users %>%
 ```
 
 ```{r}
+# ===========================================================================
 # country_destination 
-
+# ===========================================================================
 # AU: Australia, CA: Canada, DE: Germany, ES: Spain, FR: France, 
 # GB: United Kingdom, IT: Italy, NL: Netherlands, PT: Portugal
 
 # bar chart of countries 
 ggplot(train_users, aes(x = country_destination)) + geom_bar()
+# uneven distribution across countries 
+# proportion of all users visiting each country 
 train_users %>% 
   group_by(country_destination) %>% 
   summarise(n = n(), proportion = n/nrow(train_users))
