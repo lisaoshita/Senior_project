@@ -1,0 +1,236 @@
+---
+title: "train_users"
+author: "Lisa Oshita"
+date: "1/27/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Variables: 
+
+* id: user id
+* date_account_created: the date of account creation
+* timestamp_first_active: timestamp of the first activity, note that it can be earlier than date_account_created or date_first_booking because a user can search before signing up
+* date_first_booking: date of first booking
+* gender
+* age
+* signup_method
+* signup_flow: the page a user came to signup up from
+* language: international language preference
+* affiliate_channel: what kind of paid marketing
+* affiliate_provider: where the marketing is e.g. google, craigslist, other
+* first_affiliate_tracked: what was the first marketing the user interacted with before the signing up
+* signup_app
+* first_device_type
+* first_browser
+* country_destination: this is the target variable you are to predict
+
+```{r}
+# load the data 
+# 213,451 users
+train_users <- read.csv(file.path(dir, "train_users_2.csv"))
+# converting all factor vars to character
+train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
+```
+
+```{r}
+# date account created
+# separating year & month of date account created
+train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
+train_users$yearCreated <- format(train_users$dateCreated, "%Y")
+train_users$monthCreated <- format(train_users$dateCreated, "%m")
+
+ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) + 
+  geom_histogram(stat = "count") + 
+  scale_y_continuous("number accounts created") + 
+  scale_x_discrete("year account created") + 
+  ggtitle("Number of accounts created per year")
+# number of accounts created increases from 2010 - 2014
+```
+
+```{r}
+# date first booking
+# separating year & month of date of first book 
+train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
+train_users$firstBookYear <- format(train_users$firstBook, "%Y")
+train_users$firstBookMonth <- format(train_users$firstBook, "%m")
+
+# number of users who did not book 
+sum(is.na(train_users$firstBook))/nrow(train_users)
+# 58.3% of users did not book (NDF)
+```
+
+```{r}
+# age 
+ggplot(train_users, aes(x = age)) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 100))
+median(train_users$age, na.rm = TRUE)
+# max age = 2014
+# median age = 34
+# mean age = 49.7
+# 87990 missing ages (41.2%)
+
+# proportion of missing ages for female, male, unknown and other
+train_users %>% 
+  group_by(gender) %>%
+  summarise(n = n(), proportion_NAage = sum(is.na(age))/n)
+
+# boxplots of age for each country 
+ggplot(train_users, aes(x = country_destination, y = age)) + 
+  geom_boxplot() + 
+  scale_y_continuous(limit = c(0, 60))
+
+# median age range travelling to each country 
+train_users %>% 
+  group_by(country_destination) %>% 
+  summarise(median_age = median(age, na.rm = TRUE))
+# lowest median age for spain and portugal 
+```
+
+```{r}
+# function to plot bar graphs of categorical vars 
+plot_cat <- function(var) {
+  ggplot(train_users, aes(x = train_users[[var]])) + 
+    geom_bar() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    ggtitle(var) + 
+    scale_x_discrete(var) 
+}
+factorvars <- c("gender", "signup_method", "language", "affiliate_channel", "affiliate_provider",
+                "first_affiliate_tracked", "signup_app", "first_device_type", "country_destination")
+purrr::map(factorvars, ~plot_cat(.))
+
+# proportion travelling to each country  
+train_users %>% 
+  group_by(signup_method) %>% 
+  summarise(n = n(), 
+            propAU = sum(country_destination == "AU")/n,
+            propCA = sum(country_destination == "CA")/n,
+            propDE = sum(country_destination == "DE")/n,
+            propES = sum(country_destination == "ES")/n,
+            propFR = sum(country_destination == "FR")/n,
+            propGB = sum(country_destination == "GB")/n,
+            propIT = sum(country_destination == "IT")/n,
+            propNDF = sum(country_destination == "NDF")/n,
+            propNL = sum(country_destination == "NL")/n,
+            propOther = sum(country_destination == "other")/n,
+            propPT = sum(country_destination == "PT")/n,
+            propUS = sum(country_destination == "US")/n
+            )
+```
+
+```{r}
+# missing values 
+# function to count + find proportion of missing vals
+count_NA <- function(var) {
+  if (class(train_users[[var]]) == "numeric") {
+      missing <- data.frame(var = var, 
+                            total = sum(is.na(train_users[[var]])),
+                            proportion = sum(is.na(train_users[[var]])) / nrow(train_users)
+                            )
+  } else {
+    missing <- data.frame(var = var, 
+                          total = sum(train_users[[var]] == ""),
+                          proportion = sum(train_users[[var]] == "") / nrow(train_users)
+                          )
+  }
+  return(missing)
+}
+
+# replacing unknowns with "" in gender var
+train_users$gender <- stringr::str_replace(train_users$gender, 
+                                           pattern = "-unknown-", 
+                                           replacement = "")
+
+purrr::map_df(c("gender", "age", "first_affiliate_tracked"), ~count_NA(.))
+
+# ===========================================================================
+
+# indicator variable for if a user booked a trip
+train_users$book <- 1
+train_users$book[is.na(train_users$firstBook)] <- 0
+# indicator variable for if age is missing 
+train_users$provideAge <- 1
+train_users$provideAge[is.na(train_users$age)] <- 0
+
+train_users %>%
+  group_by(ageincluded) %>%
+  summarise(n = n(), propBook = sum(book == 1)/n)
+# 23% of users who don't include their age book 
+# 55% of users who do include their age book 
+
+# indicator variable for if user provided gender
+train_users$provideGender <- 1
+train_users$provideGender[train_users$gender == ""] <- 0
+
+train_users %>% 
+  group_by(provideGender) %>%
+  summarise(n = n(), propBook = sum(book == 1)/n)
+# 30% of users who did not provide their gender actually booked a trip 
+# 50% of users who provided their gender actually booked a trip 
+```
+
+```{r}
+# country_destination 
+
+# AU: Australia, CA: Canada, DE: Germany, ES: Spain, FR: France, 
+# GB: United Kingdom, IT: Italy, NL: Netherlands, PT: Portugal
+
+# bar chart of countries 
+ggplot(train_users, aes(x = country_destination)) + geom_bar()
+train_users %>% 
+  group_by(country_destination) %>% 
+  summarise(n = n(), proportion = n/nrow(train_users))
+# 58% - NDF 
+# 30% - US
+
+# bar chart of countries, excluding NDF (only for users that actually booked a trip)
+ggplot(subset(train_users, book == 1), aes(x = country_destination)) + 
+  geom_bar()
+train_users %>% 
+  filter(book == 1) %>% 
+  group_by(country_destination) %>%
+  summarise(n = n(), proportion = n/nrow(subset(train_users, book == 1)))
+# 70% of users who did book, booked their trip to somewhere in the US
+```
+
+
+
+```{r}
+# ===========================================================================
+# boosting 
+# ===========================================================================
+library(gbm)
+
+# subset data 
+traindat <- subset(train_users, select = c(gender, age, signup_method, signup_flow, signup_app, 
+                       affiliate_channel, affiliate_provider, first_affiliate_tracked, 
+                       first_device_type, first_browser, country_destination))
+
+# convert character vars to factors (gbm doesn't work with characters)
+traindat <- dplyr::mutate_if(traindat, is.character, as.factor)
+
+# fit model 
+boostAirbnb <- gbm(country_destination ~ ., data = traindat, 
+                   distribution = "multinomial", n.trees = 5, interaction.depth = 4)
+# ===========================================================================
+# predictions - returns probabilities
+predictions <- predict(boostAirbnb, newdata = traindat, n.trees = 5, type = "response")
+
+# assigns predictions to a class
+train_users$predictions <- apply(predictions, 1, which.max)
+levels <- data.frame(countries = levels(train_users$country_destination), num = 1:12)
+train_users$predictions[train_users$predictions == 8] <- "NDF"
+train_users$predictions[train_users$predictions == 12] <- "US"
+
+# accuracy 
+sum(train_users$predictions == train_users$country_destination) / nrow(train_users)
+```
+
+
+
+

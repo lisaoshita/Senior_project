@@ -53,6 +53,27 @@ age_gender %>%
 # higher proportion of females for all countries
 ```
 
+```{r}
+# age range of highest population for each country 
+get_maxage <- function(country) {
+  m <- age_gender %>% filter(country_destination == country, gender == "male") %>%
+    select(age_bucket, population_in_thousands)
+  f <- age_gender %>% filter(country_destination == country, gender == "female") %>%
+    select(age_bucket, population_in_thousands)
+  all <- full_join(m, f, by = "age_bucket")
+  all$total <- NA
+  for (i in 1:nrow(all)) {
+    all$total[i] <- sum(m$population_in_thousands[i], f$population_in_thousands[i])
+  }
+  return(as.character(all$age_bucket[all$total == max(all$total)]))
+}
+purrr::map(as.character(unique(age_gender$country_destination)), ~get_maxage(.))
+# 1 - AU, 2 - CA, 3 - DE, 4 - ES, 5 - FR, 6 - GB, 7 - IT, 8 - NL, 9 - PT, 10 - US
+
+# Canada has the highest population from 55-59 age group 
+# US - highest population from 20-24 age group 
+```
+
 #### countries
 
 ```{r}
