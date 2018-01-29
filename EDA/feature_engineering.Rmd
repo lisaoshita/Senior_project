@@ -124,7 +124,23 @@ train_users$gender <- stringr::str_replace(train_users$gender,
 ```
 
 ```{r}
-data(iris)
-encoded <- onehot::onehot(iris)
+# ===========================================================================
+# one hot encoding 
+# ===========================================================================
+library(caret)
+
+# signup_method 
+train_users <- cbind(train_users, # combine train_users with data frame of encoded variables 
+                     data.frame(predict(dummyVars(" ~ signup_method", data = train_users), 
+                                        newdata = train_users)))
+
+# signup_flow
+# 17 different levels - condense? 
+
+# data frame of variables to encode 
+vars <- train_users[, grep("language", colnames(train_users)):grep("first_browser", colnames(train_users))]
+train_users <- cbind(train_users, 
+                     data.frame(predict(dummyVars(" ~.", data = train_users), 
+                                        newdata = train_users)))
 ```
 
