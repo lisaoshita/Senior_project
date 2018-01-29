@@ -1,0 +1,130 @@
+---
+title: "Feature Engineering"
+author: "Lisa Oshita"
+date: "1/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# load data 
+dir <- file.path(getwd(),"data")
+age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
+countries <- read.csv(file.path(dir, "countries.csv"))
+sessions <- read.csv(file.path(dir, "sessionsSample.csv"))
+sessions <- sessions[, -1] # removing extra X column 
+train_users <- read.csv(file.path(dir, "train_users_2.csv"))
+```
+
+```{r}
+# converting all factors to character
+age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
+countries <- dplyr::mutate_if(countries, is.factor, as.character)
+sessions <- dplyr::mutate_if(sessions, is.factor, as.character)
+train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
+```
+
+```{r}
+# ===========================================================================
+# date account created 
+# ===========================================================================
+train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
+
+# pulling apart month + year of date created 
+train_users$yearCreated <- format(train_users$dateCreated, "%Y")
+train_users$monthCreated <- format(train_users$dateCreated, "%m")
+
+# day of the week
+train_users$weekdayCreated <- weekdays(train_users$dateCreated)
+```
+
+```{r}
+# ===========================================================================
+# timestamp first active 
+# ===========================================================================
+# first active year 
+train_users$firstactive_y <- stringr::str_sub(train_users$timestamp_first_active, start = 1, end = 4)
+
+# first active month 
+train_users$firstactive_m <- stringr::str_sub(train_users$timestamp_first_active, start = 5, end = 6)
+
+# first active day 
+train_users$firstactive_d <- stringr::str_sub(train_users$timestamp_first_active, start = 7, end = 8)
+
+# first active full date 
+train_users$firstactive_date <- as.Date(paste(train_users$firstactive_y, "-", 
+                                              train_users$firstactive_m, "-", 
+                                              train_users$firstactive_d, sep = ""), 
+                                        format = "%Y-%m-%d")
+```
+
+
+```{r}
+# ===========================================================================
+# date first booking
+# ===========================================================================
+train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
+
+# pulling apart month + year 
+train_users$firstBookYear <- format(train_users$firstBook, "%Y")
+train_users$firstBookMonth <- format(train_users$firstBook, "%m")
+
+# day of the week
+train_users$weekday_booked <- weekdays(train_users$firstBook)
+
+# indicator variable for if a user booked a trip
+train_users$book <- 1
+train_users$book[is.na(train_users$firstBook)] <- 0
+```
+
+
+```{r}
+# ===========================================================================
+# age 
+# ===========================================================================
+# age cleaned 
+
+# leave users with age 15 - 110 as is 
+
+# for users with ages in the 1900s, ageClean = year account created - age 
+train_users$ageClean <- train_users$age
+ages <- which(train_users$age > 1000 & train_users$age < 2000)
+for (i in ages) {
+  train_users$ageClean[i] <- as.numeric(train_users$yearCreated[i]) - train_users$age[i] 
+}
+
+# how to deal with ages > 110 and > 15 and missing values?
+# setting all users with ages > 2000 or < 15 as -1
+train_users$ageClean[train_users$age < 15 | train_users$age > 110 ] <- -1
+
+# ===========================================================================
+# age ranges 
+
+# 15 - 20, 20 - 25, 25 - 30... 
+# 22 different age ranges 
+train_users$age_range <- cut(train_users$ageClean, 
+                             breaks = c(min(train_users$ageClean, na.rm = TRUE), 
+                                        seq(5, 110, by = 5)))
+```
+
+```{r}
+# ===========================================================================
+# gender (female, male, other, missing)
+# ===========================================================================
+# replacing -unknown- with empty string
+train_users$gender <- stringr::str_replace(train_users$gender, 
+                                           pattern = "-unknown-", 
+                                           replacement = "")
+
+# what to do with missing genders
+# what to do with "OTHER"
+```
+
+```{r}
+data(iris)
+encoded <- onehot::onehot(iris)
+```
+
