@@ -127,7 +127,7 @@ train_users$gender <- stringr::str_replace(train_users$gender,
 # ===========================================================================
 # one hot encoding 
 # ===========================================================================
-library(caret)
+library(caret) # for dummyVars funct
 
 # signup_method 
 train_users <- cbind(train_users, # combine train_users with data frame of encoded variables 
@@ -137,10 +137,21 @@ train_users <- cbind(train_users, # combine train_users with data frame of encod
 # signup_flow
 # 17 different levels - condense? 
 
-# data frame of variables to encode 
-vars <- train_users[, grep("language", colnames(train_users)):grep("first_browser", colnames(train_users))]
-train_users <- cbind(train_users, 
-                     data.frame(predict(dummyVars(" ~.", data = train_users), 
+# language 
+train_users <- cbind(train_users, # combine train_users with data frame of encoded variables 
+                     data.frame(predict(dummyVars(" ~ language", data = train_users), 
                                         newdata = train_users)))
+# ===========================================================================
+# function to encode var
+encode <- function(var) {
+  train_users <- cbind(train_users,
+                       data.frame(predict(dummyVars(paste(" ~ ", var, sep = ""), data = train_users), 
+                                          newdata = train_users)))
+  return(train_users)
+}
+vars <- colnames(train_users)[10:15] # variables to encode
+for(v in vars) { # iterate over each variable, encode, bind to train_users
+  train_users <- encode(v)
+}
 ```
 
