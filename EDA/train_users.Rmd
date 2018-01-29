@@ -208,7 +208,7 @@ plot_cat <- function(var) {
     ggtitle(var) + 
     scale_x_discrete(var) 
 }
-factorvars <- c("gender", "signup_method", "language", "affiliate_channel", "affiliate_provider",
+factorvars <- c("gender", "signup_method", "signup_flow", "language", "affiliate_channel", "affiliate_provider",
                 "first_affiliate_tracked", "signup_app", "first_device_type", "first_browser")
 purrr::map(factorvars, ~plot_cat(.))
 # uneven distribution for all categorical vars 
@@ -223,6 +223,7 @@ proportionBooked <- function(var) {
 purrr::map(factorvars, ~proportionBooked(.))
 # signup method: only 18% of users who signed up with google booked a trip
 #                much less than those who signed up with basic/FB
+# signup flow: users from signup flow 3, 6, 2, 10 book trips more than others (17 levels - condense?)
 # affiliate channel: users of affiliate channel - content - book less than any other 
 # affiliate provider: users of craigslist, direct, google book more than others
 #               users of meetup, gsp, wayn book the least
