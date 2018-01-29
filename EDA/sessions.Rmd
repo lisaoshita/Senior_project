@@ -14,10 +14,13 @@ knitr::opts_chunk$set(echo = TRUE)
 dir <- file.path(getwd(),"data")
 # full data - 1,048,575 observations
 # sessionsFull <- read.csv(file.path(dir, "sessions.csv"))
-# # ===========================================================================
-# # sampling sessions data 
-# # ===========================================================================
-# # function to sample rows for each unique user_id subset 
+```
+
+```{r}
+# ===========================================================================
+# sampling sessions data
+# ===========================================================================
+# function to sample 10% of the rows from each unique user_id subset 
 # sampleSessions <- function(user) {
 #   # subsetting data for each user
 #   userSubset <- subset(sessionsFull, sessionsFull$user_id == user) 
@@ -25,9 +28,10 @@ dir <- file.path(getwd(),"data")
 #   sampled <- dplyr::sample_frac(tibble::as_tibble(userSubset), size = 0.10, replace = FALSE)
 #   return(sampled)
 # }
-# # iterate over each unique user_id, apply sampleSessions function, append to data frame
+
+# iterate over each unique user_id, apply sampleSessions function, append to data frame
 # sessions <- purrr::map_dfr(unique(sessionsFull$user_id), ~sampleSessions(.))
-# # saving sampled sessions 
+# saving sampled sessions as csv file 
 # write.csv(sessions, file = "sessionsSample.csv")
 
 # load sampled data 
@@ -36,6 +40,87 @@ sessions <- sessions[, -1] # removing extra X column
 ```
 
 ```{r}
-
+str(sessions)
+# 12,994 different users
+# action: 193 different actions 
+# action_type: 9 different action types (view, click, data, submit...)
+# action_detail: 93 different levels (change_trip_characteristics, contact_host...)
+# device_type: 13 different levels (Windows Desktop, iPad Tablet... )
 ```
+
+```{r}
+# ===========================================================================
+# action 
+# ===========================================================================
+# data frame of each action + its frequency 
+action_frequency <- data.frame(action = names(table(sessions$action)),
+                               frequency = unname(table(sessions$action)))
+# removing col 2, arrange by decreasing frequency 
+action_frequency <- action_frequency %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
+
+# most frequently-used actions: show, search_results, personalize 
+```
+
+```{r}
+# ===========================================================================
+# action_type
+# ===========================================================================
+actiontype_freq <- data.frame(action_type = names(table(sessions$action_type)), 
+                              frequency = unname(table(sessions$action_type)))
+actiontype_freq <- actiontype_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
+
+# most frequent action types: view, click, data 
+```
+
+```{r}
+# ===========================================================================
+# action_detail
+# ===========================================================================
+actiondetail_freq <- data.frame(action_detail = names(table(sessions$action_detail)), 
+                                frequency = unname(table(sessions$action_detail)))
+actiondetail_freq <- actiondetail_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
+
+# most frequent action detail: NA, view search results, -unknown-, wishlist content update 
+```
+
+```{r}
+# ===========================================================================
+# device_type
+# ===========================================================================
+devicetype_freq <- data.frame(device_type = names(table(sessions$device_type)), 
+                              frequency = unname(table(sessions$device_type)))
+devicetype_freq <- devicetype_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
+
+# mac/windows desktop most frequently used
+```
+
+```{r}
+# ===========================================================================
+# user_id
+# ===========================================================================
+user_freq <- data.frame(user = names(table(sessions$user_id)), 
+                        frequency = unname(table(sessions$user_id)))
+user_freq <- user_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
+
+# most frequent users: NA, vcmr2jh5ix
+
+# ===========================================================================
+# determining if a user in user_freq booked or not
+# ===========================================================================
+# function to check in train_users if user booked
+userBook <- function(user) {
+  return(train_users$book[which(train_users$id == user)])
+}
+# iterate over each unique user, add 1 or 0 to user_freq for book/did not book 
+user_freq$book <- c(0, purrr::map_dbl(as.character(unique(user_freq$user))[-1], ~userBook(.)))
+
+sum(user_freq$book) / nrow(user_freq)
+# 41.3% of users booked 
+```
+
+
+
+
+
+
 
