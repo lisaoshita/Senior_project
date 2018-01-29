@@ -54,7 +54,54 @@ ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) +
 
 # number of accounts created increases from 2010 - 2014
 # accounts created up to June 2014
+
+# weekday of account created
+train_users$weekdayCreated <- weekdays(train_users$dateCreated)
+# proportion of users who booked, grouped by weekday account was created on 
+train_users %>% 
+  group_by(weekdayCreated) %>%
+  summarise(n = n(), propBooked = sum(book == 1)/n)
+# day of the week an account was created doesn't seem to matter 
 ```
+
+```{r}
+# ===========================================================================
+# timestamp first active 
+# ===========================================================================
+# first active year 
+train_users$firstactive_y <- stringr::str_sub(train_users$timestamp_first_active, start = 1, end = 4)
+
+# first active month 
+train_users$firstactive_m <- stringr::str_sub(train_users$timestamp_first_active, start = 5, end = 6)
+
+# first active day 
+train_users$firstactive_d <- stringr::str_sub(train_users$timestamp_first_active, start = 7, end = 8)
+
+# first active full date 
+train_users$firstactive_date <- as.Date(paste(train_users$firstactive_y, "-", 
+                                              train_users$firstactive_m, "-", 
+                                              train_users$firstactive_d, sep = ""), 
+                                        format = "%Y-%m-%d")
+
+# difference between date first active and date first book 
+train_users$active_booklag <- train_users$firstactive_date - train_users$firstBook
+ggplot(train_users, aes(x = abs(active_booklag))) + 
+  geom_histogram()
+median(abs(train_users$active_booklag), na.rm = T)
+mean(abs(train_users$active_booklag), na.rm = T)
+max(abs(train_users$active_booklag), na.rm = T)
+min(abs(train_users$active_booklag), na.rm = T)
+
+# difference between date active and date account created 
+train_users$acct_active_lag <- train_users$dateCreated - train_users$firstactive_date
+ggplot(train_users, aes(x = abs(acct_active_lag))) + 
+  geom_histogram()
+median(abs(train_users$acct_active_lag), na.rm = T)
+mean(abs(train_users$acct_active_lag), na.rm = T)
+max(abs(train_users$acct_active_lag), na.rm = T)
+min(abs(train_users$acct_active_lag), na.rm = T)
+```
+
 
 ```{r}
 # ===========================================================================
@@ -111,17 +158,14 @@ ggplot(firstbookDF, aes(x = date, y = count.Freq)) +
 ggplot(train_users, aes(x = age)) + 
   geom_histogram() + 
   scale_x_continuous(limits = c(0, 100))
-
+# ===========================================================================
 # max age = 2014 (quite a few outliers)
 # median age = 34
 # mean age = 49.7
-# 87990 missing ages (41.2%)
 
-# proportion of missing ages for female, male, unknown and other
-train_users %>% 
-  group_by(gender) %>%
-  summarise(n = n(), proportion_NAage = sum(is.na(age))/n)
-
+# age quantiles 
+quantile(train_users$age, na.rm = TRUE)
+# ===========================================================================
 # boxplots of age for each country 
 ggplot(train_users, aes(x = country_destination, y = age)) + 
   geom_boxplot() + 
@@ -132,6 +176,20 @@ train_users %>%
   group_by(country_destination) %>% 
   summarise(median_age = median(age, na.rm = TRUE))
 # lowest median age for spain and portugal 
+
+# ===========================================================================
+# issues with the age variable 
+# ===========================================================================
+# 87990 missing ages (41.2%)
+
+length(train_users$age[which(train_users$age > 110)])
+# 801 users have ages > 110 
+# 710 of those users set their age as 2014 
+# some users put their birth year instead of age? (e.g 1995, 1936...)
+
+# airbnb terms of use: must be 18 years or older to create an account/use the service 
+# 158 users have ages < 18
+train_users$age[which(train_users$age < 18)]
 ```
 
 ```{r}
