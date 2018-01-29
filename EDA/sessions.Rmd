@@ -55,7 +55,7 @@ str(sessions)
 # data frame of each action + its frequency 
 action_frequency <- data.frame(action = names(table(sessions$action)),
                                frequency = unname(table(sessions$action)))
-# removing col 2, arrange by decreasing frequency 
+# removing col 2 and arrange by decreasing frequency 
 action_frequency <- action_frequency %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
 
 # most frequently-used actions: show, search_results, personalize 
@@ -118,7 +118,19 @@ sum(user_freq$book) / nrow(user_freq)
 # 41.3% of users booked 
 ```
 
+```{r}
+# ===========================================================================
+# secs_elapsed
+# ===========================================================================
+# histogram of seconds elapsed
+ggplot(sessions, aes(x = secs_elapsed)) + 
+  geom_histogram() 
 
+# average seconds elapsed for each level of categorical vars 
+dat <- subset(sessions, sessions$action_type == "view")
+mean <- mean(dat$secs_elapsed, na.rm = TRUE)
+mean
+```
 
 
 
