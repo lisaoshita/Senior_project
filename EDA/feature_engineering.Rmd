@@ -27,18 +27,30 @@ sessions <- dplyr::mutate_if(sessions, is.factor, as.character)
 train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
 ```
 
+#### Train_users 
+
 ```{r}
 # ===========================================================================
 # date account created 
 # ===========================================================================
-train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
+train_users$acct_created_date <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
 
 # pulling apart month + year of date created 
-train_users$yearCreated <- format(train_users$dateCreated, "%Y")
-train_users$monthCreated <- format(train_users$dateCreated, "%m")
+train_users$acct_created_y <- format(train_users$acct_created_date, "%Y")
+train_users$acct_created_m <- format(train_users$acct_created_date, "%m")
 
 # day of the week
-train_users$weekdayCreated <- weekdays(train_users$dateCreated)
+train_users$acct_created_wkd <- weekdays(train_users$acct_created_date)
+
+# season
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 3 & 
+                              as.numeric(train_users$acct_created_m) <= 6] <- "spring"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 7 & 
+                              as.numeric(train_users$acct_created_m) <= 9] <- "summer"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 10 & 
+                              as.numeric(train_users$acct_created_m) <= 11] <- "fall"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) == 12 |  
+                              as.numeric(train_users$acct_created_m) <= 2] <- "winter"
 ```
 
 ```{r}
@@ -59,27 +71,38 @@ train_users$firstactive_date <- as.Date(paste(train_users$firstactive_y, "-",
                                               train_users$firstactive_m, "-", 
                                               train_users$firstactive_d, sep = ""), 
                                         format = "%Y-%m-%d")
-```
 
+# first active weekday 
+train_users$firstactive_wkd <- weekdays(train_users$firstactive_date)
+```
 
 ```{r}
 # ===========================================================================
 # date first booking
 # ===========================================================================
-train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
+train_users$firstbook_date <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
 
 # pulling apart month + year 
-train_users$firstBookYear <- format(train_users$firstBook, "%Y")
-train_users$firstBookMonth <- format(train_users$firstBook, "%m")
+train_users$firstbook_y <- format(train_users$firstbook_date, "%Y")
+train_users$firstbook_m <- format(train_users$firstbook_date, "%m")
 
 # day of the week
-train_users$weekday_booked <- weekdays(train_users$firstBook)
+train_users$firstbook_wkd <- weekdays(train_users$firstbook_date)
+
+# season 
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 3 & 
+                              as.numeric(train_users$firstbook_m) <= 6] <- "spring"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 7 & 
+                              as.numeric(train_users$firstbook_m) <= 9] <- "summer"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 10 & 
+                              as.numeric(train_users$firstbook_m) <= 11] <- "fall"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) == 12 |  
+                              as.numeric(train_users$firstbook_m) <= 2] <- "winter"
 
 # indicator variable for if a user booked a trip
 train_users$book <- 1
-train_users$book[is.na(train_users$firstBook)] <- 0
+train_users$book[is.na(train_users$firstbook_date)] <- 0
 ```
-
 
 ```{r}
 # ===========================================================================
@@ -90,23 +113,22 @@ train_users$book[is.na(train_users$firstBook)] <- 0
 # leave users with age 15 - 110 as is 
 
 # for users with ages in the 1900s, ageClean = year account created - age 
-train_users$ageClean <- train_users$age
+train_users$age_clean <- train_users$age
 ages <- which(train_users$age > 1000 & train_users$age < 2000)
 for (i in ages) {
-  train_users$ageClean[i] <- as.numeric(train_users$yearCreated[i]) - train_users$age[i] 
+  train_users$age_clean[i] <- as.numeric(train_users$acct_created_y[i]) - train_users$age[i] 
 }
 
 # how to deal with ages > 110 and > 15 and missing values?
 # setting all users with ages > 2000 or < 15 as -1
-train_users$ageClean[train_users$age < 15 | train_users$age > 110 ] <- -1
+train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
 
 # ===========================================================================
 # age ranges 
 
-# 15 - 20, 20 - 25, 25 - 30... 
-# 22 different age ranges 
-train_users$age_range <- cut(train_users$ageClean, 
-                             breaks = c(min(train_users$ageClean, na.rm = TRUE), 
+# 22 different age ranges: (15 - 20), (20 - 25), (25 - 30)... 
+train_users$age_range <- cut(train_users$age_clean, 
+                             breaks = c(min(train_users$age_clean, na.rm = TRUE), 
                                         seq(5, 110, by = 5)))
 ```
 
@@ -114,18 +136,43 @@ train_users$age_range <- cut(train_users$ageClean,
 # ===========================================================================
 # gender (female, male, other, missing)
 # ===========================================================================
-# replacing -unknown- with empty string
-train_users$gender <- stringr::str_replace(train_users$gender, 
+# replacing -unknown- with OTHER
+train_users$gender_clean <- stringr::str_replace(train_users$gender, 
                                            pattern = "-unknown-", 
-                                           replacement = "")
-
-# what to do with missing genders
-# what to do with "OTHER"
+                                           replacement = "OTHER")
 ```
+
+#### Countries 
 
 ```{r}
 # ===========================================================================
-# one hot encoding 
+# merge countries df with train_users 
+# ===========================================================================
+x <- train_users %>% 
+    dplyr::full_join(countries, by = "country_destination")
+```
+
+#### Sessions 
+
+```{r}
+sessionsSum <- sessions %>% 
+  group_by(user_id) %>% 
+  summarise(vars = table(action))
+
+tally(sessions)
+
+df <- sessions[sessions$user_id == "d1mm9tcy42", ] %>% 
+  count(action)
+
+
+
+```
+
+
+
+```{r}
+# ===========================================================================
+# one hot encoding (do this last? - once have all vars set up)
 # ===========================================================================
 library(caret) # for dummyVars funct
 
