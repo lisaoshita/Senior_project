@@ -21,7 +21,6 @@ train_users <- read.csv(file.path(dir, "train_users_2.csv"))
 
 ```{r}
 # converting all factors to character
-age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
 countries <- dplyr::mutate_if(countries, is.factor, as.character)
 sessions <- dplyr::mutate_if(sessions, is.factor, as.character)
 train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
@@ -33,6 +32,7 @@ train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
 # ===========================================================================
 # date account created 
 # ===========================================================================
+
 train_users$acct_created_date <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
 
 # pulling apart month + year of date created 
@@ -57,6 +57,7 @@ train_users$acct_created_sn[as.numeric(train_users$acct_created_m) == 12 |
 # ===========================================================================
 # timestamp first active 
 # ===========================================================================
+
 # first active year 
 train_users$firstactive_y <- stringr::str_sub(train_users$timestamp_first_active, start = 1, end = 4)
 
@@ -80,6 +81,8 @@ train_users$firstactive_wkd <- weekdays(train_users$firstactive_date)
 # ===========================================================================
 # date first booking
 # ===========================================================================
+
+# converting to class = date
 train_users$firstbook_date <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
 
 # pulling apart month + year 
@@ -108,9 +111,9 @@ train_users$book[is.na(train_users$firstbook_date)] <- 0
 # ===========================================================================
 # age 
 # ===========================================================================
-# age cleaned 
 
-# leave users with age 15 - 110 as is 
+# age cleaned 
+# leaving users with age 15 - 110 as is 
 
 # for users with ages in the 1900s, ageClean = year account created - age 
 train_users$age_clean <- train_users$age
@@ -126,20 +129,21 @@ train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
 # ===========================================================================
 # age ranges 
 
-# 22 different age ranges: (15 - 20), (20 - 25), (25 - 30)... 
-train_users$age_range <- cut(train_users$age_clean, 
-                             breaks = c(min(train_users$age_clean, na.rm = TRUE), 
-                                        seq(5, 110, by = 5)))
+# 18 different age ranges (same as ranges in age_gender df)
+train_users$age_bucket <- cut(train_users$age_clean, 
+                             breaks = c(0, seq(4, 104, by = 5)), 
+                             right = TRUE)
 ```
 
 ```{r}
 # ===========================================================================
 # gender (female, male, other, missing)
 # ===========================================================================
-# replacing -unknown- with OTHER
+
+# replacing -unknown- and OTHER with empty string
 train_users$gender_clean <- stringr::str_replace(train_users$gender, 
-                                           pattern = "-unknown-", 
-                                           replacement = "OTHER")
+                                           pattern = rebus::or("-unknown-", "OTHER"), 
+                                           replacement = "")
 ```
 
 #### Countries 
@@ -148,26 +152,67 @@ train_users$gender_clean <- stringr::str_replace(train_users$gender,
 # ===========================================================================
 # merge countries df with train_users 
 # ===========================================================================
-x <- train_users %>% 
+
+train_users <- train_users %>% 
     dplyr::full_join(countries, by = "country_destination")
+```
+
+#### age_gender 
+
+```{r}
+# ===========================================================================
+# merge age_gender df with train_users 
+# ===========================================================================
+
+# convert gender to lower case to resemble gender in age_gender df
+train_users$gender_clean <- stringr::str_to_lower(train_users$gender_clean)
+
+# reformat age_bucket to resemble age_bucket in age_gender
+train_users$age_bucket <- as.character(plyr::mapvalues(train_users$age_bucket, 
+                                         from = levels(train_users$age_bucket),
+                                         to = c("0-4", "5-9", "10-14", "15-19", 
+                                                "20-24", "25-29", "30-34", "35-39", 
+                                                "40-44", "45-49", "50-54", "55-59",
+                                                "60-64", "65-69", "70-74", "75-79", 
+                                                "80-84", "85-89", "90-94", "95-99", 
+                                                "100+")))
+
+# for df merging: 
+age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
+age_gender$gender_clean <- age_gender$gender
+
+# merging age_gender with train_users according to country
+train_users <- train_users %>% left_join(age_gender[, c(1, 2, 4, 6)], 
+                                         by = c("country_destination", "age_bucket", "gender_clean"))
 ```
 
 #### Sessions 
 
 ```{r}
-sessionsSum <- sessions %>% 
-  group_by(user_id) %>% 
-  summarise(vars = table(action))
+# count actions for each user 
+df <- sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action)
+df_t <- t(df)
+colnames(df_t) <- df$action
+df_t <- df_t[-1, ]
+names(df_t)
+unname(df_t)
 
-tally(sessions)
 
-df <- sessions[sessions$user_id == "d1mm9tcy42", ] %>% 
-  count(action)
-
-
+unique_action <- unique(sessions$action)
+for (act in unique_action) {
+  user_sub <- sessions %>% filter(user_id == "d1mm9tcy42")
+  count_act <- user_sub %>% count(action)
+}
 
 ```
 
+```{r}
+```
+
+
+```{r}
+df
+```
 
 
 ```{r}
