@@ -189,30 +189,44 @@ train_users <- train_users %>% left_join(age_gender[, c(1, 2, 4, 6)],
 #### Sessions 
 
 ```{r}
-# count actions for each user 
-df <- sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action)
-df_t <- t(df)
-colnames(df_t) <- df$action
-df_t <- df_t[-1, ]
-names(df_t)
-unname(df_t)
+# ===========================================================================
+# actions (count occurences of actions for each user)
+# ===========================================================================
 
+# intialize empty data frame - append counts for each user 
+counts <- data.frame(matrix(NA, nrow = 1, 
+                            ncol = length(unique(sessions$action)) + 1))
+colnames(counts) <- c("id", paste("num", unique(sessions$action), sep = "_"))
 
-unique_action <- unique(sessions$action)
-for (act in unique_action) {
-  user_sub <- sessions %>% filter(user_id == "d1mm9tcy42")
-  count_act <- user_sub %>% count(action)
+# function to count occurences of each type of action for each user 
+get_action_counts <- function(user) {
+  df <- sessions %>% filter(user_id == user) %>% count(action) # subsetting rows 
+  if (ncol(df) <= 2) { 
+    df_t <- as.data.frame(data.table::transpose(df))  
+    df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
+    colnames(df_t) <- c(paste("num", df$action, sep = "_"), "REMOVE_LATER") # adding column names 
+    df_t <- df_t[-1, ] # removing unecessary first row 
+  } else {
+    df_t <- as.data.frame(data.table::transpose(df))[-1, ] 
+    colnames(df_t) <- paste("num", df$action, sep = "_") 
+  }
+  df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)  
+  df_t$id <- user # adding user id column
+  return(df_t)
 }
 
+# initialize empty list
+nums <- list()
+unique_users <- unique(sessions$user_id) # iterate over each unique user and append to list 
+for(i in 1:length(unique_users)) {
+  nums[[i]] <- get_action_counts(unique_users[i])
+}
+counts <- counts %>% dplyr::bind_rows(nums) # bind dataframes in nums to counts df
+counts <- counts[-1, ] # remove first row of NAs
+counts <- counts[, -195] # remove REMOVE_LATER column 
+
 ```
 
-```{r}
-```
-
-
-```{r}
-df
-```
 
 
 ```{r}
