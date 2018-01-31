@@ -36,4 +36,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * Exploratory analysis on all of Airbnb's data sets
     + sampled sessions data 
+* became familiar with each of the data sets 
+* started feature engineering 
+    + pulled apart date variables into month, day, year, weekday, season
+    + clean age variable + created age_range variable 
+    + cleaned gender variable 
+    + one hot encoding of categorical vars 
+    + merged age_gender and countries data with train_users (based off of shared variables)
+    + with sessions data: took number of occurences of each unique action type for each user
+* fit initial boosting model 
 
