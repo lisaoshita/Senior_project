@@ -42,11 +42,11 @@ train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
 # date account created
 # ===========================================================================
 # separating year & month of date account created
-train_users$dateCreated <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
-train_users$yearCreated <- format(train_users$dateCreated, "%Y")
-train_users$monthCreated <- format(train_users$dateCreated, "%m")
+train_users$acct_created_date <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
+train_users$acct_created_y <- format(train_users$acct_created_date, "%Y")
+train_users$acct_created_m <- format(train_users$acct_created_date, "%m")
 
-ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) + 
+ggplot(train_users, aes(x = acct_created_y, fill = acct_created_m)) + 
   geom_histogram(stat = "count") + 
   scale_y_continuous("number accounts created") + 
   scale_x_discrete("year account created") + 
@@ -56,12 +56,27 @@ ggplot(train_users, aes(x = yearCreated, fill = monthCreated)) +
 # accounts created up to June 2014
 
 # weekday of account created
-train_users$weekdayCreated <- weekdays(train_users$dateCreated)
+train_users$acct_created_wkd <- weekdays(train_users$acct_created_date)
 # proportion of users who booked, grouped by weekday account was created on 
 train_users %>% 
-  group_by(weekdayCreated) %>%
+  group_by(acct_created_wkd) %>%
   summarise(n = n(), propBooked = sum(book == 1)/n)
 # day of the week an account was created doesn't seem to matter 
+
+# season 
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 3 & 
+                              as.numeric(train_users$acct_created_m) <= 6] <- "spring"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 7 & 
+                              as.numeric(train_users$acct_created_m) <= 9] <- "summer"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 10 & 
+                              as.numeric(train_users$acct_created_m) <= 11] <- "fall"
+train_users$acct_created_sn[as.numeric(train_users$acct_created_m) == 12 |  
+                              as.numeric(train_users$acct_created_m) <= 2] <- "winter"
+
+train_users %>% 
+  group_by(acct_created_sn) %>%
+  summarise(n = n(), propBook = sum(book == 1)/n)
+# even rate of people booking across seasons 
 ```
 
 ```{r}
@@ -84,7 +99,7 @@ train_users$firstactive_date <- as.Date(paste(train_users$firstactive_y, "-",
                                         format = "%Y-%m-%d")
 
 # difference between date first active and date first book 
-train_users$active_booklag <- train_users$firstactive_date - train_users$firstBook
+train_users$active_booklag <- train_users$firstactive_date - train_users$firstbook_date
 ggplot(train_users, aes(x = abs(active_booklag))) + 
   geom_histogram()
 median(abs(train_users$active_booklag), na.rm = T)
@@ -93,7 +108,7 @@ max(abs(train_users$active_booklag), na.rm = T)
 min(abs(train_users$active_booklag), na.rm = T)
 
 # difference between date active and date account created 
-train_users$acct_active_lag <- train_users$dateCreated - train_users$firstactive_date
+train_users$acct_active_lag <- train_users$acct_created_date - train_users$firstactive_date
 ggplot(train_users, aes(x = abs(acct_active_lag))) + 
   geom_histogram()
 median(abs(train_users$acct_active_lag), na.rm = T)
@@ -108,18 +123,28 @@ min(abs(train_users$acct_active_lag), na.rm = T)
 # date first booking
 # ===========================================================================
 # separating year & month of date of first book 
-train_users$firstBook <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
-train_users$firstBookYear <- format(train_users$firstBook, "%Y")
-train_users$firstBookMonth <- format(train_users$firstBook, "%m")
+train_users$firstbook_date <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
+train_users$firstbook_y <- format(train_users$firstbook_date, "%Y")
+train_users$firstbook_m <- format(train_users$firstbook_date, "%m")
 
 # number of users who did not book 
-sum(is.na(train_users$firstBook))/nrow(train_users)
+sum(is.na(train_users$firstbook_date))/nrow(train_users)
 
 # 58.3% of users did not book (NDF)
 
+# season 
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 3 & 
+                              as.numeric(train_users$firstbook_m) <= 6] <- "spring"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 7 & 
+                              as.numeric(train_users$firstbook_m) <= 9] <- "summer"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 10 & 
+                              as.numeric(train_users$firstbook_m) <= 11] <- "fall"
+train_users$firstbook_sn[as.numeric(train_users$firstbook_m) == 12 |  
+                              as.numeric(train_users$firstbook_m) <= 2] <- "winter"
+
 # ===========================================================================
 # how long it took users to book (after creating account)
-train_users$time_until_book <- train_users$firstBook - train_users$dateCreated
+train_users$time_until_book <- train_users$firstbook_date - train_users$acct_created_date
 
 # distribution of time until first booking 
 ggplot(train_users, aes(x = time_until_book)) + 
@@ -198,7 +223,7 @@ train_users$age[which(train_users$age < 18)]
 # ===========================================================================
 # indicator variable for if a user booked a trip
 train_users$book <- 1
-train_users$book[is.na(train_users$firstBook)] <- 0
+train_users$book[is.na(train_users$firstbook_date)] <- 0
 # ===========================================================================
 # function to plot bar graphs of categorical vars, color coded by whether or not the user booked
 plot_cat <- function(var) {
