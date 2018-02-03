@@ -1,0 +1,62 @@
+---
+title: "5-fold CV of Boosting Model"
+author: "Lisa Oshita"
+date: "2/2/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+levels <- data.frame(countries = levels(train$country_destination), num = 1:12)
+
+# function to match number with country
+get_countries <- function(predict) {
+  predict[predict == 1] <- "AU"; predict[predict == 2] <- "CA"
+  predict[predict == 3] <- "DE"; predict[predict == 4] <- "ES"
+  predict[predict == 5] <- "FR"; predict[predict == 6] <- "GB"
+  predict[predict == 7] <- "IT"; predict[predict == 8] <- "NDF"
+  predict[predict == 9] <- "NL"; predict[predict == 10] <- "other"
+  predict[predict == 11] <- "PT"; predict[predict == 12] <- "US"
+  return(predict)
+}
+```
+
+
+```{r}
+library(gbm)
+
+# function to perform cross-validation 
+gbm_cv <- function(fold) {
+  # set up training and test sets 
+  training <- train[fold, ] 
+  testing <- train[-fold, ]
+  
+  # fit gradient boosted model
+  fit <- gbm(country_destination ~ ., data = training, 
+             distribution = "multinomial", n.trees = 5)
+  
+  # compute predictions on test set 
+  predict <- predict(fit, newdata = testing, n.trees = 5, type = "response")
+  # translate predictions to countries
+  predict <- apply(predict, 1, which.max) 
+  predict <- get_countries(predict)  
+  
+  # return list containing accuracy + confusion matrix
+  return(list(sum(testing$country_destination == predict) / nrow(testing),
+              table(predict, testing$country_destination))) 
+}
+
+# creating test and train sets
+folds <- caret::createFolds(train$country_destination, k = 5, list = TRUE, returnTrain = TRUE)
+
+# iterate over each fold and apply cv function 
+cv_results <- purrr::map(folds, ~gbm_cv(.))
+
+cv_results # 100% accuracy still 
+```
+
+
+
