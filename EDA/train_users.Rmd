@@ -379,6 +379,7 @@ predictions <- predict(boostAirbnb, newdata = traindat, n.trees = 5, type = "res
 # assigns predictions to a class
 train_users$predictions <- apply(predictions, 1, which.max)
 levels <- data.frame(countries = levels(train_users$country_destination), num = 1:12)
+
 train_users$predictions[train_users$predictions == 8] <- "NDF"
 train_users$predictions[train_users$predictions == 12] <- "US"
 

@@ -57,7 +57,7 @@ action_frequency <- data.frame(action = names(table(sessions$action)),
                                frequency = unname(table(sessions$action)))
 # removing col 2 and arrange by decreasing frequency 
 action_frequency <- action_frequency %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
-
+action_frequency
 # most frequently-used actions: show, search_results, personalize 
 ```
 
@@ -68,7 +68,7 @@ action_frequency <- action_frequency %>% select(-frequency.Var1) %>% arrange(des
 actiontype_freq <- data.frame(action_type = names(table(sessions$action_type)), 
                               frequency = unname(table(sessions$action_type)))
 actiontype_freq <- actiontype_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
-
+actiontype_freq
 # most frequent action types: view, click, data 
 ```
 
@@ -79,7 +79,7 @@ actiontype_freq <- actiontype_freq %>% select(-frequency.Var1) %>% arrange(desc(
 actiondetail_freq <- data.frame(action_detail = names(table(sessions$action_detail)), 
                                 frequency = unname(table(sessions$action_detail)))
 actiondetail_freq <- actiondetail_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
-
+actiondetail_freq
 # most frequent action detail: NA, view search results, -unknown-, wishlist content update 
 ```
 
@@ -90,7 +90,7 @@ actiondetail_freq <- actiondetail_freq %>% select(-frequency.Var1) %>% arrange(d
 devicetype_freq <- data.frame(device_type = names(table(sessions$device_type)), 
                               frequency = unname(table(sessions$device_type)))
 devicetype_freq <- devicetype_freq %>% select(-frequency.Var1) %>% arrange(desc(frequency.Freq))
-
+devicetype_freq
 # mac/windows desktop most frequently used
 ```
 
