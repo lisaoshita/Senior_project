@@ -42,7 +42,13 @@ knitr::opts_chunk$set(echo = TRUE)
     + clean age variable + created age_range variable 
     + cleaned gender variable 
     + one hot encoding of categorical vars 
-    + merged age_gender and countries data with train_users (based off of shared variables)
-    + with sessions data: took number of occurences of each unique action type for each user
-* fit initial boosting model 
+    + merged age_gender and countries data with train_users (based on shared variables)
+    + with sessions data: took number of occurences of each unique action type for each user - will continue to do this for all vars in the sessions df 
+* fit initial boosting model - 100% accuracy? 
+
+#### Week 5
+
+* 5-fold cross validation of boosted model - tried using function in caret package--R kept crashing 
+    + wrote function to perform cross-validation and return accuracy + confusion matrix 
+    + obtained 100% accuracy for each fold of cross-validation 
 
