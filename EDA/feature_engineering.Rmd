@@ -258,51 +258,44 @@ type_counts <- data.frame(matrix(NA, nrow = 1,
                             ncol = length(unique(sessions$action_type)) + 1))
 colnames(type_counts) <- c("id", paste("num", unique(sessions$action_type), sep = "_"))
 
+
 get_counts <- function(user, var) {
-  df <- sessions %>% filter_(as.name(user_id) == user) %>% count_(as.name(var)) # subsetting rows 
-  # if (nrow(df) <= 1) {
-  #   df_t <- as.data.frame(data.table::transpose(df))
-  #   df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
-  #   colnames(df_t) <- c(paste("num", df[[var]], sep = "_"), "REMOVE_LATER") # adding column names
-  #   df_t <- df_t[-1, ] # removing unecessary first row
-  # } else {
-  #   df_t <- as.data.frame(data.table::transpose(df))[-1, ]
-  #   colnames(df_t) <- paste("num", df[[var]], sep = "_")
-  # }
-  # df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)
-  # df_t$id <- user # adding user id column
-  # return(df_t)
-  return(df)
+  df <- sessions %>% filter(user_id == user) %>% count_(var) # subsetting rows to each user
+  if (nrow(df) <= 1) {
+    df_t <- as.data.frame(data.table::transpose(df))
+    df_t$REMOVE_LATER <- NA # adding extra column to retain df class
+    colnames(df_t) <- c(paste("num", df[[var]], sep = "_"), "REMOVE_LATER") # adding column names
+    df_t <- df_t[-1, ] # removing unecessary first row
+  } else {
+    df_t <- as.data.frame(data.table::transpose(df))[-1, ]
+    colnames(df_t) <- paste("num", df[[var]], sep = "_")
+  }
+  df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)
+  df_t$id <- user # adding user id column
+  return(df_t)
 }
 
-sessions %>% summarise_(n_uniq = interp(~n_distinct(v), v = as.name(uniq.var)))
+# initialize empty list, append action_type counts to list 
+num_types <- list()
+for(i in 1:length(unique_users)) {
+  num_types[[i]] <- get_counts(unique_users[i], "action_type")
+}
 
-get_counts(user = "d1mm9tcy42", var = "action_type")
-get_type_counts("zzvatt4dio", var = "action_type") # not working
-sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action_type) # subsetting rows
+# list --> data frame 
+type_counts <- type_counts %>% dplyr::bind_rows(num_types) 
+type_counts <- type_counts[-1, ] # remove first row of NAs
+type_counts <- type_counts[, -which(colnames(type_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
+colnames(type_counts) <- c("id", paste("at", colnames(type_counts)[-1], sep = "_")) # adding "at" to column names 
 
-library(lazyeval)
+# merging counts with train_users
+train_users <- train_users %>% full_join(type_counts, by = "id")
 
-df <- sessions %>% filter(user_id == "yo8nz8bqcq") %>% count(action_type)
-df <- sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action)
-df_t <- as.data.frame(data.table::transpose(df))
-df_t$REMOVE_LATER <- NA
-df_t
-colnames(df_t) <- c(paste("num", df$action_type, sep = "_"), "REMOVE_LATER")
-df_t <- df_t[-1, ]
-ncol(df)
-nrow(df)
-df_t <- data.table::transpose(df)
-df_t
-data.table::transpose(df)
-ncol(df_t)
+library(rebus)
+# column numbers of vars with action_type counts
+type_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "at_"))
+# changing NAs to 0s in new columns 
+train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
 ```
-
-```{r}
-d <- data.frame(unknwon = 1)
-data.table::transpose(d)
-```
-
 
 ```{r}
 # ===========================================================================
