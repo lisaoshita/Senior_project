@@ -51,4 +51,6 @@ knitr::opts_chunk$set(echo = TRUE)
 * 5-fold cross validation of boosted model - tried using function in caret package--R kept crashing 
     + wrote function to perform cross-validation and return accuracy + confusion matrix 
     + obtained 100% accuracy for each fold of cross-validation 
+* added count variables for each column in sessions data 
+* readings about gbm algorithms 
 
