@@ -17,6 +17,9 @@ countries <- read.csv(file.path(dir, "countries.csv"))
 sessions <- read.csv(file.path(dir, "sessionsSample.csv"))
 sessions <- sessions[, -1] # removing extra X column 
 train_users <- read.csv(file.path(dir, "train_users_2.csv"))
+
+library(magrittr)
+library(dplyr)
 ```
 
 ```{r}
@@ -133,6 +136,8 @@ train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
 train_users$age_bucket <- cut(train_users$age_clean, 
                              breaks = c(0, seq(4, 104, by = 5)), 
                              right = TRUE)
+unique(train_users$age_bucket)
+sum(train_users$age > 100, na.rm = T)
 ```
 
 ```{r}
@@ -201,7 +206,7 @@ colnames(counts) <- c("id", paste("num", unique(sessions$action), sep = "_"))
 # function to count occurences of each type of action for each user 
 get_action_counts <- function(user) {
   df <- sessions %>% filter(user_id == user) %>% count(action) # subsetting rows 
-  if (ncol(df) <= 2) { 
+  if (nrow(df) <= 1) { 
     df_t <- as.data.frame(data.table::transpose(df))  
     df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
     colnames(df_t) <- c(paste("num", df$action, sep = "_"), "REMOVE_LATER") # adding column names 
@@ -221,7 +226,7 @@ unique_users <- unique(sessions$user_id) # iterate over each unique user and app
 for(i in 1:length(unique_users)) {
   nums[[i]] <- get_action_counts(unique_users[i])
 }
-counts <- counts %>% dplyr::bind_rows(nums) # bind dataframes in nums to counts df
+counts <- counts %>% dplyr::bind_rows(nums) # bind data frames in nums to counts df
 counts <- counts[-1, ] # remove first row of NAs
 counts <- counts[, -195] # remove REMOVE_LATER column 
 
@@ -231,12 +236,10 @@ train_users <- train_users %>% full_join(counts, by = "id")
 # changing NAs to 0
 train_users[, 43:ncol(train_users)][is.na(train_users[, 43:ncol(train_users)])] <- 0
 
-# mean close to 0
-sapply(train_users[, 43:ncol(train_users)], mean)
-# median = 0
-sapply(train_users[, 43:ncol(train_users)], median)
-# sd close to 0
-sapply(train_users[, 43:ncol(train_users)], sd)
+# ===========================================================================
+# creating ranges 
+# ===========================================================================
+# mean, median, sd for each count close to 0
 
 # set ranges: if num_action is greater than or less than 1
 action_bucket$num_index_bucket <- cut(train_users$num_index, 
@@ -248,36 +251,58 @@ action_bucket$num_index_bucket <- cut(train_users$num_index,
 
 ```{r}
 # ===========================================================================
-# action type
+# action type (9 different types)
 # ===========================================================================
 
 type_counts <- data.frame(matrix(NA, nrow = 1, 
                             ncol = length(unique(sessions$action_type)) + 1))
 colnames(type_counts) <- c("id", paste("num", unique(sessions$action_type), sep = "_"))
 
-get_type_counts <- function(user, var) {
-  df <- sessions %>% filter(user_id == user) %>% count(sessions[[var]]) # subsetting rows 
-  if (ncol(df) <= 2) { 
-    df_t <- as.data.frame(data.table::transpose(df))  
-    df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
-    colnames(df_t) <- c(paste("num", df[1:nrow(df), 1], sep = "_"), "REMOVE_LATER") # adding column names 
-    df_t <- df_t[-1, ] # removing unecessary first row 
-  } else {
-    df_t <- as.data.frame(data.table::transpose(df))[-1, ] 
-    colnames(df_t) <- paste("num", df[1:nrow(df), 1], sep = "_") 
-  }
-  df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)  
-  df_t$id <- user # adding user id column
-  return(df_t)
+get_counts <- function(user, var) {
+  df <- sessions %>% filter_(as.name(user_id) == user) %>% count_(as.name(var)) # subsetting rows 
+  # if (nrow(df) <= 1) {
+  #   df_t <- as.data.frame(data.table::transpose(df))
+  #   df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
+  #   colnames(df_t) <- c(paste("num", df[[var]], sep = "_"), "REMOVE_LATER") # adding column names
+  #   df_t <- df_t[-1, ] # removing unecessary first row
+  # } else {
+  #   df_t <- as.data.frame(data.table::transpose(df))[-1, ]
+  #   colnames(df_t) <- paste("num", df[[var]], sep = "_")
+  # }
+  # df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)
+  # df_t$id <- user # adding user id column
+  # return(df_t)
+  return(df)
 }
 
+sessions %>% summarise_(n_uniq = interp(~n_distinct(v), v = as.name(uniq.var)))
+
+get_counts(user = "d1mm9tcy42", var = "action_type")
 get_type_counts("zzvatt4dio", var = "action_type") # not working
+sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action_type) # subsetting rows
 
-df <- sessions %>% filter(user_id == "zzvatt4dio") %>% count(action_type)
+library(lazyeval)
 
-df
-  count(sessions[["action_type"]]) # subsetting rows 
+df <- sessions %>% filter(user_id == "yo8nz8bqcq") %>% count(action_type)
+df <- sessions %>% filter(user_id == "d1mm9tcy42") %>% count(action)
+df_t <- as.data.frame(data.table::transpose(df))
+df_t$REMOVE_LATER <- NA
+df_t
+colnames(df_t) <- c(paste("num", df$action_type, sep = "_"), "REMOVE_LATER")
+df_t <- df_t[-1, ]
+ncol(df)
+nrow(df)
+df_t <- data.table::transpose(df)
+df_t
+data.table::transpose(df)
+ncol(df_t)
 ```
+
+```{r}
+d <- data.frame(unknwon = 1)
+data.table::transpose(d)
+```
+
 
 ```{r}
 # ===========================================================================
@@ -296,34 +321,7 @@ df
 # ===========================================================================
 # one hot encoding (do this last? - once have all vars set up)
 # ===========================================================================
-library(caret) # for dummyVars funct
-
-# # signup_method 
-# train_users <- cbind(train_users, # combine train_users with data frame of encoded variables 
-#                      data.frame(predict(dummyVars(" ~ signup_method", data = train_users), 
-#                                         newdata = train_users)))
-# 
-# # signup_flow
-# # 17 different levels - condense? 
-# 
-# # language 
-# train_users <- cbind(train_users, # combine train_users with data frame of encoded variables 
-#                      data.frame(predict(dummyVars(" ~ language", data = train_users), 
-#                                         newdata = train_users)))
-# # ===========================================================================
-# # function to encode var
-# encode <- function(var) {
-#   train_users <- cbind(train_users,
-#                        data.frame(predict(dummyVars(paste(" ~ ", var, sep = ""), data = train_users), 
-#                                           newdata = train_users)))
-#   return(train_users)
-# }
-# vars <- colnames(train_users)[10:15] # variables to encode
-# for(v in vars) { # iterate over each variable, encode, bind to train_users
-#   train_users <- encode(v)
-# }
-
-# ===========================================================================
+library(caret) # for dummyVars function
 
 # cols: 18-24, 26, 28-32, 34-41
 to_encode <- train_users[, c(18:24, 26, 28:32, 34:41)] 
@@ -332,32 +330,7 @@ train <- cbind(train_users$country_destination,
                data.frame(predict(dummyVars("~.", data = to_encode),
                                   newdata = to_encode)))
 train <- train[-213452, ] # removing row with NA for country_destination
-library(gbm)
-boostAirbnb <- gbm(train$`train_users$country_destination` ~ ., data = train, 
-                   distribution = "multinomial", n.trees = 5, interaction.depth = 4)
-boostAirbnb
-predictions <- predict(boostAirbnb, newdata = train, n.trees = 5, type = "response")
 
-train$predictions <- apply(predictions, 1, which.max)
-levels <- data.frame(countries = levels(train$`train_users$country_destination`), num = 1:12)
-
-train$predictions[train$predictions == 1] <- "AU"
-train$predictions[train$predictions == 2] <- "CA"
-train$predictions[train$predictions == 3] <- "DE"
-train$predictions[train$predictions == 4] <- "ES"
-train$predictions[train$predictions == 5] <- "FR"
-train$predictions[train$predictions == 6] <- "GB"
-train$predictions[train$predictions == 7] <- "IT"
-train$predictions[train$predictions == 8] <- "NDF"
-train$predictions[train$predictions == 9] <- "NL"
-train$predictions[train$predictions == 10] <- "other"
-train$predictions[train$predictions == 11] <- "PT"
-train$predictions[train$predictions == 12] <- "US"
-
-# 100% accuracy?? 
-sum(train$predictions == train$`train_users$country_destination`) / nrow(train)
-
-pred <- data.frame(country = train$`train_users$country_destination`, predictions = train$predictions, 
-                   correct = train$`train_users$country_destination` == train$predictions)
 ```
+
 
