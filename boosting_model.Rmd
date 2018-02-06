@@ -45,18 +45,17 @@ gbm_cv <- function(fold) {
   predict <- get_countries(predict)  
   
   # return list containing accuracy + confusion matrix
-  return(list(sum(testing$country_destination == predict) / nrow(testing),
+  return(list(fit, 
+              predict,
+              sum(testing$country_destination == predict) / nrow(testing),
               table(predict, testing$country_destination))) 
 }
 
 # creating test and train sets
-folds <- caret::createFolds(train$country_destination, k = 5, list = TRUE, returnTrain = TRUE)
+folds <- caret::createFolds(train$country_destination, k = 3, list = TRUE, returnTrain = TRUE)
 
 # iterate over each fold and apply cv function 
 cv_results <- purrr::map(folds, ~gbm_cv(.))
 
 cv_results # 100% accuracy still 
 ```
-
-
-
