@@ -287,7 +287,7 @@ type_counts <- type_counts[-1, ] # remove first row of NAs
 type_counts <- type_counts[, -which(colnames(type_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
 colnames(type_counts) <- c("id", paste("at", colnames(type_counts)[-1], sep = "_")) # adding "at" to column names 
 
-# merging counts with train_users
+# merging with train_users
 train_users <- train_users %>% full_join(type_counts, by = "id")
 
 library(rebus)
@@ -301,12 +301,58 @@ train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
 # ===========================================================================
 # action detail (93 different details)
 # ===========================================================================
+
+detail_counts <- data.frame(matrix(NA, nrow = 1, 
+                            ncol = length(unique(sessions$action_detail)) + 1))
+colnames(detail_counts) <- c("id", paste("num", unique(sessions$action_detail), sep = "_"))
+
+num_details <- list()
+for(i in 1:length(unique_users)) {
+  num_details[[i]] <- get_counts(unique_users[i], "action_detail")
+}
+
+# list --> data frame 
+detail_counts <- detail_counts %>% dplyr::bind_rows(num_details) 
+detail_counts <- detail_counts[-1, ] # remove first row of NAs
+detail_counts <- detail_counts[, -which(colnames(detail_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
+colnames(detail_counts) <- c("id", paste("ad", colnames(detail_counts)[-1], sep = "_")) # adding "ad" to column names 
+
+# merging with train_users
+train_users <- train_users %>% full_join(detail_counts, by = "id")
+
+# changing NAs to 0s in new columns
+detail_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "ad_"))
+train_users[, detail_vars][is.na(train_users[, detail_vars])] <- 0
 ```
 
 ```{r}
 # ===========================================================================
-# device type 
+# device type (13 different devices)
 # ===========================================================================
+
+device_counts <- data.frame(matrix(NA, nrow = 1, 
+                            ncol = length(unique(sessions$device_type)) + 1))
+colnames(device_counts) <- c("id", paste("num", unique(sessions$device_type), sep = "_"))
+# changing spaces in column names to "_"
+colnames(device_counts) <- stringr::str_replace(colnames(device_counts), pattern = " ", replacement = "_") 
+
+num_devices <- list()
+for(i in 1:length(unique_users)) {
+  num_devices[[i]] <- get_counts(unique_users[i], "device_type")
+}
+
+# list --> data frame 
+device_counts <- device_counts %>% dplyr::bind_rows(num_devices) 
+device_counts <- device_counts[-1, ] # remove first row of NAs
+device_counts <- device_counts[, -which(colnames(device_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
+colnames(device_counts) <- c("id", paste("d", colnames(device_counts)[-1], sep = "_")) # adding "ad" to column names 
+
+# merging with train_users
+train_users <- train_users %>% full_join(device_counts, by = "id")
+
+# changing NAs to 0s in new columns
+device_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "d_"))
+train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
 ```
 
 
