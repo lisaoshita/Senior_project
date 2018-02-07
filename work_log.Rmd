@@ -53,4 +53,7 @@ knitr::opts_chunk$set(echo = TRUE)
     + obtained 100% accuracy for each fold of cross-validation 
 * added count variables for each column in sessions data 
 * readings about gbm algorithms 
+* fit an xgboost algorithm, similar to what Keiichi Kuroyanagi (3rd place winner) did, and based off of xgboost tutorials and readings
+    + cross-validation on the training data (100% accuracy) + confusion matrix
+    + fit to the full training data and predicted on hold out test data (100% accuracy) + confusion matrix + variable importance
 
