@@ -10,8 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-levels <- data.frame(countries = levels(train$country_destination), num = 1:12)
-
 # function to match number with country
 get_countries <- function(predict) {
   predict[predict == 1] <- "AU"; predict[predict == 2] <- "CA"
@@ -24,10 +22,34 @@ get_countries <- function(predict) {
 }
 ```
 
+```{r}
+library(gbm)
+library(xgboost)
+library(caret)
+library(magrittr)
+library(dplyr)
+```
+
+```{r}
+# gradient boosted model
+# only using: signup_method, signup_flow, language, affiliate_channel, affiliate_provider, 
+# first_affiliate_tracked, signup_app, first_device_type
+
+pract_train <- train[,1:129] # using train data from feature_engineering.rmd 
+boostpract <- gbm(country_destination ~., data = pract_train, distribution = "multinomial",
+                  n.trees = 5)
+boostpract
+
+gbm_predict <- predict(boostpract, newdata = pract_train, n.trees = 5, type = "response")
+gbm_predict <- apply(gbm_predict, 1, which.max) 
+gbm_predict <- get_countries(gbm_predict)  
+table(predict, train_users$country_destination)
+```
+
+
 #### 5-fold CV of Gradient Boosting 
 
 ```{r}
-library(gbm)
 
 # function to perform cross-validation
 gbm_cv <- function(fold) {
@@ -98,8 +120,6 @@ cv_results # 100% accuracy still
 * eval_metric: AUC, mlogloss (error metrics)
 
 ```{r}
-library(xgboost)
-
 # creating test and train sets
 inTrain <- caret::createDataPartition(y = train$country_destination, p = 0.7, list = FALSE)
 mtrain <- data.matrix(train[inTrain, ])
@@ -154,9 +174,9 @@ xgb_train <- xgboost(params = params,
 # Predict on test set
 test_pred <- predict(xgb_train, newdata = dtest)
 test_prediction <- matrix(test_pred, 
-                          nrow = 12,
+                          nrow = 12, 
                           ncol = length(test_pred) / 12) %>% t() %>% data.frame() %>% 
-  mutate(label = mtest[,1] + 1, max_prob = max.col(., "last"))
+  smutate(label = mtest[,1] + 1, max_prob = max.col(., "last"))
 
 # confusion matrix
 confusionMatrix(factor(test_prediction$label),
