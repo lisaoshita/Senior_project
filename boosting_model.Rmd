@@ -1,5 +1,5 @@
 ---
-title: "5-fold CV of Boosting Model"
+title: "Boosting Models"
 author: "Lisa Oshita"
 date: "2/2/2018"
 output: html_document
@@ -24,11 +24,12 @@ get_countries <- function(predict) {
 }
 ```
 
+#### 5-fold CV of Gradient Boosting 
 
 ```{r}
 library(gbm)
 
-# function to perform cross-validation 
+# function to perform cross-validation
 gbm_cv <- function(fold) {
   # set up training and test sets 
   training <- train[fold, ] 
@@ -59,3 +60,69 @@ cv_results <- purrr::map(folds, ~gbm_cv(.))
 
 cv_results # 100% accuracy still 
 ```
+
+##### XGBoost
+
+* faster than gradient boosting
+* only works with numeric vectors
+    + one hot encoding for categorical variables
+    
+##### Booster Parameters
+
+* nrounds: max number of iterations
+    + similar to number of trees to grow
+    + tune using CV
+* eta (range 0-1): controls learning rate
+    + lower/slower learning rate - slower computation, must be supported by increase in nrounds
+    + typically lies between 0.1 and 0.3
+* gamma: controls regularization (prevents overfitting)
+    + Higher the value, higher the regularization (default = 0, no regularization)
+    + Regularization means penalizing large coefficients that don't improve performance
+    + Tune trick: Start with 0, check CV error rate. If train error >>> test error, include gamma. Higher the gamma, lower the difference in train and test CV. (starting point: use gamma=5 and see the performance)
+    + brings improvement when you want to use shallow (low max_depth) trees
+* max_depth (depth of the tree)
+    + larger the depth - more chances of overfitting
+    + tune with CV
+* min_child_weight
+    + if leaf node has minimum sum of instance weight lower than min_child_weight - splitting stops 
+    + prevents overfitting
+    tune with CV
+* subsample
+    + number of subsamples supplied to a tree -typically between 0.5 - 0.8
+* colsample_bytree
+    + controls number of features supplied to a tree (between 0.5 - 0.9)
+    
+##### Learning parameters
+
+* objective: multi:softmax, multi:softprob
+* eval_metric: AUC, mlogloss (error metrics)
+
+```{r}
+library(xgboost)
+inTrain <- caret::createDataPartition(y = train$country_destination, p = 0.7, list = FALSE)
+
+# converting data frame to xgb.DMatrix (recommended)
+mtrain <- data.matrix(train[inTrain, ])
+mtest <- data.matrix(train[-inTrain, ])
+mtrain[,1] <- mtrain[,1] - 1
+mtest[,1] <- mtest[,1] - 1
+
+dtrain <- xgb.DMatrix(data = mtrain[,-1], label = mtrain[,1]) 
+dtest <- xgb.DMatrix(data = mtest[,-1], label = mtest[,1])
+
+# default parameters
+params <- list("objective" = "multi:softprob",
+               "num_class" = 12,
+               eta = 0.3, gamma = 0, 
+               max_depth = 6, min_child_weight = 1, 
+               subsample = 1, colsample_bytree = 1)
+
+n_round <- 50
+xgb_cv <- xgb.cv(params = params, data = dtrain,
+                 nfold = 5, nrounds = n_round, 
+                 maximize = TRUE, print_every_n = 10, 
+                 early_stop_round = 2, prediction = TRUE)
+
+oof_prediction <- data.frame(xgb_cv$pred)
+```
+
