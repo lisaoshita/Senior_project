@@ -358,7 +358,7 @@ train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
 
 ```{r}
 # ===========================================================================
-# one hot encoding (do this last? - once have all vars set up)
+# one hot encoding
 # ===========================================================================
 library(caret) # for dummyVars function
 
@@ -372,12 +372,32 @@ to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), s
                                        firstactive_date, firstbook_date, book, lat_destination, lng_destination))
 
 to_encode[is.na(to_encode)] <- -1 # converting all NAs to -1 (gbm doesn't work with NAs)
+
+# removing row with NA for country_destination
+train_users <- train_users[-which(is.na(train_users$country_destination)), ]
 train <- cbind(train_users$country_destination, 
                data.frame(predict(dummyVars("~.", data = to_encode),
+                                  newdata = to_encode)),
+               train_users %>% select(starts_with("num_"), starts_with("d_"),
+                                      starts_with("ad_"), starts_with("at_")))
+colnames(train)[1] <- "country_destination"
+
+# ===========================================================================
+# gradient boosted model with basic vars (variables given in data set)
+pract <- train_users[, 7:14]
+pract_train <- cbind(train_users$country_destination,
+                     data.frame(predict(dummyVars("~.", data = to_encode),
                                   newdata = to_encode)))
-train <- train[-213452, ] # removing row with NA for country_destination
-colnames(train_users)
+colnames(pract_train)[1] <- "country_destination"
+
+boostpract <- gbm(country_destination ~., data = pract_train, distribution = "multinomial",
+                  n.trees = 5)
+predictions <- predict(boostpract, newdata = pract_train, n.trees = 5, type = "response")
+predict <- apply(predictions, 1, which.max) 
+predict <- get_countries(predict)  
+table(predict, train_users$country_destination)
 ```
+
 
 
 
