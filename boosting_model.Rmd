@@ -50,7 +50,6 @@ table(predict, train_users$country_destination)
 #### 5-fold CV of Gradient Boosting 
 
 ```{r}
-
 # function to perform cross-validation
 gbm_cv <- function(fold) {
   # set up training and test sets 
@@ -76,7 +75,7 @@ gbm_cv <- function(fold) {
 
 # creating test and train sets
 folds <- caret::createFolds(train$country_destination, k = 3, list = TRUE, returnTrain = TRUE)
-
+folds
 # iterate over each fold and apply cv function 
 cv_results <- purrr::map(folds, ~gbm_cv(.))
 
@@ -120,12 +119,71 @@ cv_results # 100% accuracy still
 * eval_metric: AUC, mlogloss (error metrics)
 
 ```{r}
+# ====================================================================
+# ndcg5 metric
+# ====================================================================
+dcg_at_k <- function (r, k=min(5, length(r)) ) {
+  #only coded alternative formulation of DCG (used by kaggle)
+  r <- as.vector(r)[1:k]
+  sum(( 2^r - 1 )/ log2( 2:(length(r)+1)) )
+} 
+
+ndcg_at_k <- function(r, k=min(5, length(r)) ) {
+  r <- as.vector(r)[1:k]
+  if (sum(r) <= 0) return (0)     # no hits (dcg_max = 0)
+  dcg_max = dcg_at_k(sort(r, decreasing=TRUE)[1:k], k)
+  return ( dcg_at_k(r, k) / dcg_max )
+}
+
+score_predictions <- function(preds, truth) {
+  # preds: matrix or data.frame
+  # one row for each observation, one column for each prediction.
+  # Columns are sorted from left to right descending in order of likelihood.
+  # truth: vector
+  # one row for each observation.
+  preds <- as.matrix(preds)
+  truth <- as.vector(truth)
+  
+  stopifnot( length(truth) == nrow(preds))
+  r <- apply( cbind( truth, preds), 1
+              , function(x) ifelse( x == x[1], 1, 0))[ -1, ]
+  if ( ncol(preds) == 1) r <-  rbind( r, r)  #workaround for 1d matrices
+  as.vector( apply(r, 2, ndcg_at_k) )
+}
+
+ndcg5 <- function(preds, dtrain) {
+  
+  labels <- getinfo(dtrain,"label")
+  num.class = length(unique(labels))
+  pred <- matrix(preds, nrow = num.class)
+  top <- t(apply(pred, 2, function(y) order(y)[num.class:(num.class-4)]-1))
+  
+  x <- ifelse(top==labels,1,0)
+  dcg <- function(y) sum((2^y - 1)/log(2:(length(y)+1), base = 2))
+  ndcg <- mean(apply(x,1,dcg))
+  return(list(metric = "ndcg5", value = ndcg))
+}
+```
+
+
+```{r}
 # creating test and train sets
 inTrain <- caret::createDataPartition(y = train$country_destination, p = 0.7, list = FALSE)
 mtrain <- data.matrix(train[inTrain, ])
 mtest <- data.matrix(train[-inTrain, ])
 mtrain[,1] <- mtrain[,1] - 1
 mtest[,1] <- mtest[,1] - 1
+
+# ----------------------------------------------------------------------
+# retrying CV
+mtrain1 <- mtrain[,-1] # with country_destination removed
+train_countries <- mtrain[,1]
+dtrain1 <- xgb.DMatrix(data = mtrain1, label = train_countries)
+
+mtest1 <- mtest[,-1]
+test_countries <- mtest[,1]
+dtest1 <- xgb.DMatrix(data = mtest1, label = test_countries)
+# ----------------------------------------------------------------------
 
 # converting data frame to xgb.DMatrix (recommended with xgboost)
 dtrain <- xgb.DMatrix(data = mtrain[,-1], label = mtrain[,1]) 
@@ -147,8 +205,23 @@ xgb_cv <- xgb.cv(params = params,
                  nrounds = n_round, 
                  maximize = TRUE, 
                  print_every_n = 10, 
-                 early_stop_round = 2, 
+                 early_stop_round = 2,
+                 feval = ndcg5,
                  prediction = TRUE)
+
+# ----------------------------------------------------------------------
+# retrying CV
+xgb_cv1 <- xgb.cv(params = params,
+                  data = dtrain1, 
+                  nfold = 5,
+                  nrounds = 5,
+                  maximize = TRUE,
+                  print_every_n = 2,
+                  early_stop_round = 2,
+                  prediction = TRUE)
+oof_prediction1 <- data.frame(xgb_cv1$pred) %>% mutate(max_prob = max.col(., ties.method = "last"), label = train_countries + 1)
+confusionMatrix(factor(oof_prediction1$label), factor(oof_prediction1$max_prob), mode = "everything")
+# ----------------------------------------------------------------------
 
 # predictions
 oof_prediction <- data.frame(xgb_cv$pred) %>% mutate(max_prob = max.col(., ties.method = "last"), label = mtrain[,1] + 1)
@@ -176,7 +249,7 @@ test_pred <- predict(xgb_train, newdata = dtest)
 test_prediction <- matrix(test_pred, 
                           nrow = 12, 
                           ncol = length(test_pred) / 12) %>% t() %>% data.frame() %>% 
-  smutate(label = mtest[,1] + 1, max_prob = max.col(., "last"))
+  mutate(label = mtest[,1] + 1, max_prob = max.col(., "last"))
 
 # confusion matrix
 confusionMatrix(factor(test_prediction$label),
@@ -189,8 +262,7 @@ importance_m
 # gain: improvement in accuracy brought by a feature it branches on 
 
 # plot of variable importance
-importance_p <- xgb.plot.importance(importance_m)
-importance_p
+xgb.plot.importance(importance_m)
 ```
 
 
