@@ -140,11 +140,37 @@ confusionMatrix(factor(oof_prediction$label), factor(oof_prediction$max_prob), m
 var_importance <- xgb.importance(feature_names = colnames(mtrain), model = xgb_cv)
 xgb.plot.importance (importance_matrix = mat[1:20]) 
 
-# parameter tuning 
+# parameter tuning ??
 
 # fit model to all of train data 
 # xgb.train function crashes r
+xgb_train <- xgboost(params = params,
+                     data = dtrain,
+                     nrounds = 5,
+                     maximize = TRUE, 
+                     print_every_n = 10,
+                     early_stop_round = 2)
 
+# Predict on test set
+test_pred <- predict(xgb_train, newdata = dtest)
+test_prediction <- matrix(test_pred, 
+                          nrow = 12,
+                          ncol = length(test_pred) / 12) %>% t() %>% data.frame() %>% 
+  mutate(label = mtest[,1] + 1, max_prob = max.col(., "last"))
+
+# confusion matrix
+confusionMatrix(factor(test_prediction$label),
+                factor(test_prediction$max_prob),
+                mode = "everything")
+
+# variable importance
+importance_m <- xgb.importance(feature_names = colnames(mtrain), model = xgb_train)
+importance_m
+# gain: improvement in accuracy brought by a feature it branches on 
+
+# plot of variable importance
+importance_p <- xgb.plot.importance(importance_m)
+importance_p
 ```
 
 
