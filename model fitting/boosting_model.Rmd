@@ -229,12 +229,6 @@ oof_prediction <- data.frame(xgb_cv$pred) %>% mutate(max_prob = max.col(., ties.
 # confusion matrix
 confusionMatrix(factor(oof_prediction$label), factor(oof_prediction$max_prob), mode = "everything")
 
-# variable importance
-var_importance <- xgb.importance(feature_names = colnames(mtrain), model = xgb_cv)
-xgb.plot.importance (importance_matrix = mat[1:20]) 
-
-# parameter tuning ??
-
 # fit model to all of train data 
 # xgb.train function crashes r
 xgb_train <- xgboost(params = params,
