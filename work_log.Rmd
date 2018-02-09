@@ -28,7 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
 * Applied ml algorithms to iris data set 
 * Exploratory analysis on Airbnb's data sets (train_users, age_gender)
     + turned date variables into date time vars 
-    + plotted categorical vars as bar charts 
+    + graphed variables 
     + looked at missing values 
 * applied boosting model with all variables data, achieved 62% accuracy, only predicted US and NDF
 
@@ -36,13 +36,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * Exploratory analysis on all of Airbnb's data sets
     + sampled sessions data 
-* became familiar with each of the data sets 
-* started feature engineering 
+* feature engineering 
     + pulled apart date variables into month, day, year, weekday, season
-    + clean age variable + created age_range variable 
-    + cleaned gender variable 
+    + cleaned age variable + created age_range variable (to mirror age_buckets in age_gender df) 
+    + cleaned gender variable
     + one hot encoding of categorical vars 
-    + merged age_gender and countries data with train_users (based on shared variables)
+    + merged age_gender and countries data with train_users 
     + with sessions data: took number of occurences of each unique action type for each user - will continue to do this for all vars in the sessions df 
 * fit initial boosting model - 100% accuracy? 
 
@@ -51,9 +50,15 @@ knitr::opts_chunk$set(echo = TRUE)
 * 5-fold cross validation of boosted model - tried using function in caret package--R kept crashing 
     + wrote function to perform cross-validation and return accuracy + confusion matrix 
     + obtained 100% accuracy for each fold of cross-validation 
-* added count variables for each column in sessions data 
-* readings about gbm algorithms 
+* added variables to training data 
+    + count features for each column of sessions data
+    + one hot encoding of all categorical features
+    + training data - 596 features
+* researched gbm and xgboost algorithms
 * fit an xgboost algorithm, similar to what Keiichi Kuroyanagi (3rd place winner) did, and based off of xgboost tutorials and readings
     + cross-validation on the training data (100% accuracy) + confusion matrix
     + fit to the full training data and predicted on hold out test data (100% accuracy) + confusion matrix + variable importance
+    
+#### Week 6
+* trying to figure out issue of 100% accuracy 
 
