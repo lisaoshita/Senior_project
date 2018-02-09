@@ -175,12 +175,12 @@ confusionMatrix(factor(predictions$label),
 
 # working with only a sample -------------------------------------------------
 s <- sample(1:nrow(train), nrow(train)/4) # try with a quarter of the data
-full_s <- data.matrix(train[s, -1]) # 53362 observations 
+full_s <- data.matrix(train[s, -1]) # 53362 observations, with country_destination removed
 full_label_s <- as.numeric(train$country_destination[s]) - 1
 
 # train
 t <- caret::createDataPartition(y = full_label_s, p = 0.70, list = FALSE)
-train_s <- full_s[t, ]
+train_s <- full_s[t, ] 
 train_s_lab <- full_label_s[t]
 train_s_m <- xgb.DMatrix(data = train_s, label = train_s_lab)
 
@@ -199,32 +199,33 @@ params <- list("objective" = "multi:softprob",
                    eta = 0.3, 
                    max_depth = 6)
 
-rounds    <- 50 
-folds  <- 5
-
-# fit 5-fold CV 50 times and save out of fold predictions
-cv_model <- xgb.cv(params = params,
-                   data = train_s_m, 
-                   nrounds = rounds,
-                   nfold = folds,
-                   verbose = FALSE,
-                   prediction = TRUE)
-
-# using max.col to assign a class
-OOF_prediction <- data.frame(cv_model$pred) %>% mutate(max_prob = max.col(., ties.method = "last"),
-                                                       label = train_lab + 1)
-head(OOF_prediction)
-
-# confusion matrix
-confusionMatrix(factor(OOF_prediction$label), 
-                factor(OOF_prediction$max_prob),
-                mode = "everything")
+# rounds    <- 50 
+# folds  <- 5
+# 
+# # fit 5-fold CV 50 times and save out of fold predictions
+# cv_model <- xgb.cv(params = params,
+#                    data = train_s_m, 
+#                    nrounds = rounds,
+#                    nfold = folds,
+#                    verbose = FALSE,
+#                    prediction = TRUE)
+# 
+# # using max.col to assign a class
+# OOF_prediction <- data.frame(cv_model$pred) %>% mutate(max_prob = max.col(., ties.method = "last"),
+#                                                        label = train_lab + 1)
+# head(OOF_prediction)
+# 
+# # confusion matrix
+# confusionMatrix(factor(OOF_prediction$label), 
+#                 factor(OOF_prediction$max_prob),
+#                 mode = "everything")
 
 # ---------------------------------------------------------------------------
 
 # fitting to full train data 
 
 fit <- xgb.train(params = params, data = train_s_m, nrounds = rounds)
+fit <- xgboost(params = params, data = train_s_m, nrounds = rounds)
 
 # Predict hold-out test set
 test_p <- predict(fit, newdata = test_s_m)
