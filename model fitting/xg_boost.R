@@ -2,102 +2,11 @@
 # XGBoost
 # =====================================================================================
 
-# =====================================================================================
-# Code from: https://rpubs.com/mharris/multiclass_xgboost
-# =====================================================================================
+# load data
+dir <- file.path(getwd(),"data")
+train <- read.csv(file.path(dir, "train.csv"))
 
-library("xgboost")  
-library("archdata") 
-library("caret")   
-library("dplyr") 
-library("magrittr")
-
-set.seed(717)
-data(RBGlass1)
-dat <- RBGlass1 
-
-# converting response to numeric + adding another class
-dat$Site <- as.numeric(dat$Site)
-dat_add <- dat[which(dat$Site == 1),] %>%
-  rowwise() %>%
-  mutate_all(funs(./10 + rnorm(1,.,.*0.1))) %>%
-  mutate_all(funs(round(.,2))) %>%
-  mutate(Site = 3)
-dat <- rbind(dat, dat_add) %>%
-  mutate(Site = Site - 1)
-
-# creating test/train splits
-in_train <- createDataPartition(y = dat$Site, p = 0.75, list = FALSE)
-
-# full data set
-full_vars <- as.matrix(dat[,-1]) # removed site
-full_lab <- dat[, "Site"]
-full_m <- xgb.DMatrix(data = full_vars, label = full_lab)
-
-# train 
-train_dat <- full_vars[in_train, ]
-train_lab <- full_lab[in_train[,1]]
-train_m <- xgb.DMatrix(data = train_dat, label = train_lab)
-
-# test 
-test_dat <- full_vars[-in_train,]
-test_lab <- full_lab[-in_train[,1]]
-test_m <- xgb.DMatrix(data = test_dat, label = test_lab)
-
-# --------------------------------------------------------------------
-# k-fold CV
-
-numberOfClasses <- length(unique(dat$Site))
-xgb_params <- list("objective" = "multi:softprob",
-                   "eval_metric" = "mlogloss",
-                   "num_class" = numberOfClasses)
-
-nround    <- 50 
-cv.nfold  <- 5
-
-# fit 5-fold CV 50 times and save out of fold predictions
-cv <- xgb.cv(params = xgb_params,
-             data = train_m, 
-             nrounds = nround,
-             nfold = cv.nfold,
-             verbose = FALSE,
-             prediction = TRUE)
-
-# using max.col to assign a class
-OOF_prediction <- data.frame(cv$pred) %>% mutate(max_prob = max.col(., ties.method = "last"),
-                                                 label = train_lab + 1)
-head(OOF_prediction)
-
-# confusion matrix
-confusionMatrix(factor(OOF_prediction$label), 
-                factor(OOF_prediction$max_prob),
-                mode = "everything")
-# 85% accuracy 
-
-# --------------------------------------------------------------------
-
-# fitting to full train data 
-bst_model <- xgb.train(params = xgb_params,
-                       data = train_m,
-                       nrounds = nround)
-# Predict hold-out test set
-test_pred <- predict(bst_model, newdata = test_m)
-test_prediction <- matrix(test_pred, nrow = numberOfClasses,
-                          ncol=length(test_pred)/numberOfClasses) %>% t() %>% data.frame() %>% mutate(label = test_lab + 1,
-                                                                                                      max_prob = max.col(., "last"))
-# confusion matrix of test set
-confusionMatrix(factor(test_prediction$label),
-                factor(test_prediction$max_prob),
-                mode = "everything")
-
-# achieved 73% accuracy 
-
-
-# =====================================================================================
-# Airbnb data: working with the train df from feature_engineering file 
-# =====================================================================================
 # set up data
-
 # full data 
 full_variables <- data.matrix(train[,-1]) # with country_destination removed
 full_label <- as.numeric(train$country_destination) - 1 # converting to numeric, subtracting 1 (to work with xgb)
@@ -149,7 +58,7 @@ head(out_of_fold_p)
 confusionMatrix(factor(out_of_fold_p$label), 
                 factor(out_of_fold_p$max_prob),
                 mode = "everything")
-# 100% accuracy??
+# 100% accuracy
 
 # =====================================================================================
 
@@ -224,7 +133,6 @@ params <- list("objective" = "multi:softprob",
 
 # fitting to full train data 
 
-fit <- xgb.train(params = params, data = train_s_m, nrounds = rounds)
 fit <- xgboost(params = params, data = train_s_m, nrounds = rounds)
 
 # Predict hold-out test set
