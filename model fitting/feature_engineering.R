@@ -137,7 +137,7 @@ train_users$gender_clean <- stringr::str_replace(train_users$gender,
 # --------------------------------------------------------------------------------------------------------
 
 
-train_users <- train_users %>% dplyr::full_join(countries, by = "country_destination")
+# train_users <- train_users %>% dplyr::full_join(countries, by = "country_destination")
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -158,13 +158,13 @@ train_users$age_bucket <- as.character(plyr::mapvalues(train_users$age_bucket,
                                                               "80-84", "85-89", "90-94", "95-99", 
                                                               "100+")))
 
-# for df merging: 
-age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
-age_gender$gender_clean <- age_gender$gender
-
-# merging age_gender with train_users according to country
-train_users <- train_users %>% left_join(age_gender[, c(1, 2, 4, 6)], 
-                                         by = c("country_destination", "age_bucket", "gender_clean"))
+# # for df merging: 
+# age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
+# age_gender$gender_clean <- age_gender$gender
+# 
+# # merging age_gender with train_users according to country
+# train_users <- train_users %>% left_join(age_gender[, c(1, 2, 4, 6)], 
+#                                          by = c("country_destination", "age_bucket", "gender_clean"))
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -341,8 +341,7 @@ train_users <- train_users[-which(is.na(train_users$country_destination)), ]
 to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), starts_with("ad_"),
                                        starts_with("at_"), id, date_account_created, timestamp_first_active,
                                        date_first_booking, gender, age, country_destination, acct_created_date,
-                                       firstactive_date, firstbook_date, lat_destination, lng_destination,
-                                       population_in_thousands))
+                                       firstactive_date, firstbook_date))
 
 # converting all NAs to -1 (gbm doesn't work with NAs)
 to_encode[is.na(to_encode)] <- -1 
@@ -356,3 +355,7 @@ colnames(train)[1] <- "country_destination"
 
 # saving as csv 
 write.csv(x = train, file = "train.csv")
+
+
+
+
