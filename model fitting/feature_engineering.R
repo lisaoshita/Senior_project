@@ -1,16 +1,10 @@
----
-title: "Feature Engineering"
-author: "Lisa Oshita"
-date: "1/28/2018"
-output: html_document
----
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+# ========================================================================================================
+# Feature engineering 
+# ========================================================================================================
 
-```{r}
-# load data 
+
+# load data + packages
 dir <- file.path(getwd(),"data")
 age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
 countries <- read.csv(file.path(dir, "countries.csv"))
@@ -20,22 +14,21 @@ train_users <- read.csv(file.path(dir, "train_users_2.csv"))
 
 library(magrittr)
 library(dplyr)
-```
+library(rebus)
+library(caret)
 
-```{r}
 # converting all factors to character
 countries <- dplyr::mutate_if(countries, is.factor, as.character)
 sessions <- dplyr::mutate_if(sessions, is.factor, as.character)
 train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
-```
 
-#### Train_users 
 
-```{r}
-# ===========================================================================
-# date account created 
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
+# date account created
+# --------------------------------------------------------------------------------------------------------
 
+
+# converting to date class 
 train_users$acct_created_date <- as.Date(train_users$date_account_created, format="%Y-%m-%d")
 
 # pulling apart month + year of date created 
@@ -54,12 +47,12 @@ train_users$acct_created_sn[as.numeric(train_users$acct_created_m) >= 10 &
                               as.numeric(train_users$acct_created_m) <= 11] <- "fall"
 train_users$acct_created_sn[as.numeric(train_users$acct_created_m) == 12 |  
                               as.numeric(train_users$acct_created_m) <= 2] <- "winter"
-```
 
-```{r}
-# ===========================================================================
+
+# --------------------------------------------------------------------------------------------------------
 # timestamp first active 
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
+
 
 # first active year 
 train_users$firstactive_y <- stringr::str_sub(train_users$timestamp_first_active, start = 1, end = 4)
@@ -78,12 +71,12 @@ train_users$firstactive_date <- as.Date(paste(train_users$firstactive_y, "-",
 
 # first active weekday 
 train_users$firstactive_wkd <- weekdays(train_users$firstactive_date)
-```
 
-```{r}
-# ===========================================================================
+
+# --------------------------------------------------------------------------------------------------------
 # date first booking
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
+
 
 # converting to class = date
 train_users$firstbook_date <- as.Date(train_users$date_first_booking, format="%Y-%m-%d")
@@ -97,26 +90,19 @@ train_users$firstbook_wkd <- weekdays(train_users$firstbook_date)
 
 # season 
 train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 3 & 
-                              as.numeric(train_users$firstbook_m) <= 6] <- "spring"
+                           as.numeric(train_users$firstbook_m) <= 6] <- "spring"
 train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 7 & 
-                              as.numeric(train_users$firstbook_m) <= 9] <- "summer"
+                           as.numeric(train_users$firstbook_m) <= 9] <- "summer"
 train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 10 & 
-                              as.numeric(train_users$firstbook_m) <= 11] <- "fall"
+                           as.numeric(train_users$firstbook_m) <= 11] <- "fall"
 train_users$firstbook_sn[as.numeric(train_users$firstbook_m) == 12 |  
-                              as.numeric(train_users$firstbook_m) <= 2] <- "winter"
+                           as.numeric(train_users$firstbook_m) <= 2] <- "winter"
 
-# indicator variable for if a user booked a trip
-# train_users$book <- 1
-# train_users$book[is.na(train_users$firstbook_date)] <- 0
-```
 
-```{r}
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
 # age 
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
 
-# age cleaned 
-# leaving users with age 15 - 110 as is 
 
 # for users with ages in the 1900s, ageClean = year account created - age 
 train_users$age_clean <- train_users$age
@@ -125,62 +111,52 @@ for (i in ages) {
   train_users$age_clean[i] <- as.numeric(train_users$acct_created_y[i]) - train_users$age[i] 
 }
 
-# how to deal with ages > 110 and > 15 and missing values?
 # setting all users with ages > 2000 or < 15 as -1
 train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
 
-# ===========================================================================
 # age ranges 
-
 # 18 different age ranges (same as ranges in age_gender df)
 train_users$age_bucket <- cut(train_users$age_clean, 
-                             breaks = c(0, seq(4, 104, by = 5)), 
-                             right = TRUE)
-unique(train_users$age_bucket)
-sum(train_users$age > 100, na.rm = T)
-```
+                              breaks = c(0, seq(4, 104, by = 5)), 
+                              right = TRUE)
 
-```{r}
-# ===========================================================================
-# gender (female, male, other, missing)
-# ===========================================================================
+
+# --------------------------------------------------------------------------------------------------------
+# gender
+# --------------------------------------------------------------------------------------------------------
+
 
 # replacing -unknown- and OTHER with empty string
 train_users$gender_clean <- stringr::str_replace(train_users$gender, 
-                                           pattern = rebus::or("-unknown-", "OTHER"), 
-                                           replacement = "")
-```
+                                                 pattern = rebus::or("-unknown-", "OTHER"), 
+                                                 replacement = "")
 
-#### Countries 
 
-```{r}
-# ===========================================================================
-# merge countries df with train_users 
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
+# merge countries with train_users 
+# --------------------------------------------------------------------------------------------------------
 
-train_users <- train_users %>% 
-    dplyr::full_join(countries, by = "country_destination")
-```
 
-#### age_gender 
+train_users <- train_users %>% dplyr::full_join(countries, by = "country_destination")
 
-```{r}
-# ===========================================================================
-# merge age_gender df with train_users 
-# ===========================================================================
+
+# --------------------------------------------------------------------------------------------------------
+# merge age_gender with train_users
+# --------------------------------------------------------------------------------------------------------
+
 
 # convert gender to lower case to resemble gender in age_gender df
 train_users$gender_clean <- stringr::str_to_lower(train_users$gender_clean)
 
 # reformat age_bucket to resemble age_bucket in age_gender
 train_users$age_bucket <- as.character(plyr::mapvalues(train_users$age_bucket, 
-                                         from = levels(train_users$age_bucket),
-                                         to = c("0-4", "5-9", "10-14", "15-19", 
-                                                "20-24", "25-29", "30-34", "35-39", 
-                                                "40-44", "45-49", "50-54", "55-59",
-                                                "60-64", "65-69", "70-74", "75-79", 
-                                                "80-84", "85-89", "90-94", "95-99", 
-                                                "100+")))
+                                                       from = levels(train_users$age_bucket),
+                                                       to = c("0-4", "5-9", "10-14", "15-19", 
+                                                              "20-24", "25-29", "30-34", "35-39", 
+                                                              "40-44", "45-49", "50-54", "55-59",
+                                                              "60-64", "65-69", "70-74", "75-79", 
+                                                              "80-84", "85-89", "90-94", "95-99", 
+                                                              "100+")))
 
 # for df merging: 
 age_gender <- dplyr::mutate_if(age_gender, is.factor, as.character)
@@ -189,14 +165,14 @@ age_gender$gender_clean <- age_gender$gender
 # merging age_gender with train_users according to country
 train_users <- train_users %>% left_join(age_gender[, c(1, 2, 4, 6)], 
                                          by = c("country_destination", "age_bucket", "gender_clean"))
-```
 
-#### Sessions 
 
-```{r}
-# ===========================================================================
-# actions (count occurences of actions for each user)
-# ===========================================================================
+# --------------------------------------------------------------------------------------------------------
+# sessions data 
+# --------------------------------------------------------------------------------------------------------
+
+
+# action - count occurences for each user 
 
 # intialize empty data frame - append counts for each user 
 counts <- data.frame(matrix(NA, nrow = 1, 
@@ -237,19 +213,18 @@ train_users <- train_users %>% full_join(counts, by = "id")
 train_users[, 43:ncol(train_users)][is.na(train_users[, 43:ncol(train_users)])] <- 0
 
 
+# --------------------------------------------------------------------------------------------------------
 
-```
 
-```{r}
-# ===========================================================================
-# action type (9 different types)
-# ===========================================================================
+# action type counts
 
+# empty data frame
 type_counts <- data.frame(matrix(NA, nrow = 1, 
-                            ncol = length(unique(sessions$action_type)) + 1))
+                                 ncol = length(unique(sessions$action_type)) + 1))
 colnames(type_counts) <- c("id", paste("num", unique(sessions$action_type), sep = "_"))
 
 
+# function to get counts for each var 
 get_counts <- function(user, var) {
   df <- sessions %>% filter(user_id == user) %>% count_(var) # subsetting rows to each user
   if (nrow(df) <= 1) {
@@ -266,47 +241,54 @@ get_counts <- function(user, var) {
   return(df_t)
 }
 
-# initialize empty list, append action_type counts to list 
+
+# initialize empty list, append counts to list 
 num_types <- list()
 for(i in 1:length(unique_users)) {
   num_types[[i]] <- get_counts(unique_users[i], "action_type")
 }
 
-# list --> data frame 
-type_counts <- type_counts %>% dplyr::bind_rows(num_types) 
-type_counts <- type_counts[-1, ] # remove first row of NAs
-type_counts <- type_counts[, -which(colnames(type_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
-colnames(type_counts) <- c("id", paste("at", colnames(type_counts)[-1], sep = "_")) # adding "at" to column names 
+
+# function to turn list into df + remove certain columns 
+merge_counts <- function(df, count_list, var_name) {
+  df <- df %>% dplyr::bind_rows(count_list)
+  #df <- df[-1, ] # removing first row of NAs
+  df <- df[, -which(colnames(df) == "REMOVE_LATER")] # removing REMOVE_LATER
+  colnames(df) <- c("id", paste(var_name, colnames(df)[-1], sep = "_")) # adding identifier to column names
+  return(df)
+} 
+
+
+type_counts <- merge_counts(type_counts, num_types, var_name = "at")
+type_counts <- type_counts[-1, ]
 
 # merging with train_users
 train_users <- train_users %>% full_join(type_counts, by = "id")
 
-library(rebus)
 # column numbers of vars with action_type counts
 type_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "at_"))
 # changing NAs to 0s in new columns 
 train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
-```
 
-```{r}
-# ===========================================================================
-# action detail (93 different details)
-# ===========================================================================
 
+# --------------------------------------------------------------------------------------------------------
+
+
+# action detail
+
+# empty data frame
 detail_counts <- data.frame(matrix(NA, nrow = 1, 
-                            ncol = length(unique(sessions$action_detail)) + 1))
+                                   ncol = length(unique(sessions$action_detail)) + 1))
 colnames(detail_counts) <- c("id", paste("num", unique(sessions$action_detail), sep = "_"))
+
 
 num_details <- list()
 for(i in 1:length(unique_users)) {
   num_details[[i]] <- get_counts(unique_users[i], "action_detail")
 }
 
-# list --> data frame 
-detail_counts <- detail_counts %>% dplyr::bind_rows(num_details) 
-detail_counts <- detail_counts[-1, ] # remove first row of NAs
-detail_counts <- detail_counts[, -which(colnames(detail_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
-colnames(detail_counts) <- c("id", paste("ad", colnames(detail_counts)[-1], sep = "_")) # adding "ad" to column names 
+detail_counts <- merge_counts(detail_counts, num_details, var_name = "ad")
+detail_counts <- detail_counts[-1, ]
 
 # merging with train_users
 train_users <- train_users %>% full_join(detail_counts, by = "id")
@@ -314,15 +296,16 @@ train_users <- train_users %>% full_join(detail_counts, by = "id")
 # changing NAs to 0s in new columns
 detail_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "ad_"))
 train_users[, detail_vars][is.na(train_users[, detail_vars])] <- 0
-```
 
-```{r}
-# ===========================================================================
-# device type (13 different devices)
-# ===========================================================================
+
+
+# --------------------------------------------------------------------------------------------------------
+
+
+# device counts
 
 device_counts <- data.frame(matrix(NA, nrow = 1, 
-                            ncol = length(unique(sessions$device_type)) + 1))
+                                   ncol = length(unique(sessions$device_type)) + 1))
 colnames(device_counts) <- c("id", paste("num", unique(sessions$device_type), sep = "_"))
 # changing spaces in column names to "_"
 colnames(device_counts) <- stringr::str_replace(colnames(device_counts), pattern = " ", replacement = "_") 
@@ -332,11 +315,8 @@ for(i in 1:length(unique_users)) {
   num_devices[[i]] <- get_counts(unique_users[i], "device_type")
 }
 
-# list --> data frame 
-device_counts <- device_counts %>% dplyr::bind_rows(num_devices) 
-device_counts <- device_counts[-1, ] # remove first row of NAs
-device_counts <- device_counts[, -which(colnames(device_counts) == "REMOVE_LATER")] # remove REMOVE_LATER column
-colnames(device_counts) <- c("id", paste("d", colnames(device_counts)[-1], sep = "_")) # adding "ad" to column names 
+device_counts <- merge_counts(device_counts, num_devices, var_name = "d")
+device_counts <- device_counts[-1,]
 
 # merging with train_users
 train_users <- train_users %>% full_join(device_counts, by = "id")
@@ -344,24 +324,16 @@ train_users <- train_users %>% full_join(device_counts, by = "id")
 # changing NAs to 0s in new columns
 device_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "d_"))
 train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
-```
 
 
-```{r}
-# ===========================================================================
+
+# --------------------------------------------------------------------------------------------------------
 # one hot encoding
-# ===========================================================================
-library(caret) # for dummyVars function
+# --------------------------------------------------------------------------------------------------------
 
 # encode all except: id, date_account_created, timestamp_first_active, date_first_booking, gender,
 #                    age, country_destination, acct_created_date, firstactive_date, firstbook_date, 
 #                    book, lat_destination, lng_destination, destination_km2, all sessions count variables
-
-# data frame of variables to encode 
-# signup_method - first_browser
-# accountcreated_y - firstbook_sn
-# age_bucket - gender_clean
-# distance_km - langugae_leven.. 
 
 # removing row with NA for country_destination
 train_users <- train_users[-which(is.na(train_users$country_destination)), ]
@@ -375,16 +347,12 @@ to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), s
 # converting all NAs to -1 (gbm doesn't work with NAs)
 to_encode[is.na(to_encode)] <- -1 
 
-
-
 train <- cbind(train_users$country_destination,
                data.frame(predict(dummyVars("~.", data = to_encode), newdata = to_encode)),
                train_users %>% select(starts_with("num_"), starts_with("d_"),
                                       starts_with("ad_"), starts_with("at_")))
 
 colnames(train)[1] <- "country_destination"
-```
 
-
-
-
+# saving as csv 
+write.csv(x = train, file = "train.csv")
