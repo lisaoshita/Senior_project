@@ -60,5 +60,9 @@ knitr::opts_chunk$set(echo = TRUE)
     + fit to the full training data and predicted on hold out test data (100% accuracy) + confusion matrix + variable importance
     
 #### Week 6
-* trying to figure out issue of 100% accuracy 
+
+* figured out 100% accuracy issue - adjusted model and data accordingly 
+* fit new xgboost - achieved 87% accuracy (obtained with CV as well as with model fit to the full training data)
+* view variable importance
+* researched ensemble/stacking methods in ML 
 
