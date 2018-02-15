@@ -65,7 +65,7 @@ out_of_fold_p <- data.frame(cv_model$pred) %>% mutate(max_prob = max.col(., ties
 head(out_of_fold_p)
 
 # confusion matrix
-table(out_of_fold_p$max_prob, out_of_fold_p$label) # only predicting countries 5,8,10,12 - mostly predicting 12 (US) (France, NDF, Other, US)
+table(out_of_fold_p$max_prob, out_of_fold_p$label) # only predicting countries 3,5,8,10,12 - mostly predicting 12 (US) (Germany, France, NDF, Other, US)
 
 sum(out_of_fold_p$max_prob == out_of_fold_p$label)/nrow(out_of_fold_p) # 87.6% accuracy
 
@@ -88,7 +88,7 @@ predictions <- matrix(heldout_test_pred,
 #                 factor(predictions$max_prob),
 #                 mode = "everything")
 
-table(predictions$max_prob, predictions$label) # only predicting countries 5, 8, 12
+table(predictions$max_prob, predictions$label) # only predicting countries 8, 10, 12
 
 sum(predictions$max_prob == predictions$label) / nrow(predictions) # 87.6% accuracy 
 
