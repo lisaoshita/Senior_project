@@ -104,3 +104,68 @@ head(importance)
 first_20 <- importance[1:20,]
 xgb.plot.importance(first_20)
 
+# ==============================================================================================================
+
+# fitting model with only the features from xgb.importance output (only 250)
+
+# ==============================================================================================================
+
+new_train <- train[, c(1, which(colnames(train) %in% importance$Feature))]
+
+# set up data
+
+# training data 
+train_index1 <- caret::createDataPartition(y = new_train$country_destination, p = 0.70, list = FALSE)
+train_data1 <- data.matrix(new_train[train_index1, -1])
+train_label1 <- as.numeric(new_train[train_index1, 1]) - 1
+train_matrix1 <- xgb.DMatrix(data = train_data1, label = train_label1)
+
+# test data 
+test_data1 <- data.matrix(new_train[-train_index1, -1])
+test_label1 <- as.numeric(new_train[-train_index1, 1]) - 1
+test_matrix1 <- xgb.DMatrix(data = test_data1, label = test_label1)
+
+# 5-fold CV
+cv_model1 <- xgb.cv(params = parameters,
+                   data = train_matrix1,
+                   nrounds = n_round,
+                   nfold = cv_fold,
+                   early_stop_round = 1,
+                   verbose = F,
+                   maximize = T,
+                   prediction = T)
+
+# out of fold predictions 
+out_of_fold_p1 <- data.frame(cv_model1$pred) %>% mutate(max_prob = max.col(., ties.method = "last"),
+                                                      label = train_label1 + 1)
+head(out_of_fold_p1)
+
+# confusion matrix
+table(out_of_fold_p1$max_prob, out_of_fold_p1$label) # only predicting countries 5,8,10,12 
+
+sum(out_of_fold_p1$max_prob == out_of_fold_p1$label)/nrow(out_of_fold_p1) # 87.6% accuracy
+
+# fitting to full train data
+
+full_model1 <- xgb.train(params = parameters,
+                        data = train_matrix1,
+                        nrounds = n_round)
+
+# Predict hold-out test set
+heldout_test_pred1 <- predict(full_model1, newdata = test_matrix1)
+predictions1 <- matrix(heldout_test_pred1, 
+                      nrow = n_classes, 
+                      ncol = length(heldout_test_pred1) / n_classes) %>% t() %>% data.frame() %>% mutate(label = test_label1 + 1,
+                                                                                                    max_prob = max.col(., "last"))
+
+table(predictions1$max_prob, predictions1$label) # only predicting countries 8, 10, 12
+
+sum(predictions1$max_prob == predictions1$label) / nrow(predictions1) # 87.6% accuracy 
+
+# variable importance
+importance1 <- xgb.importance(colnames(train_matrix1), full_model1)
+head(importance1)
+
+first_201 <- importance1[1:20,]
+xgb.plot.importance(first_201)
+
