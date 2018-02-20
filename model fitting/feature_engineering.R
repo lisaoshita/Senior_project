@@ -129,7 +129,7 @@ train_users$age_bucket <- cut(train_users$age_clean,
 # replacing -unknown- and OTHER with empty string
 train_users$gender_clean <- stringr::str_replace(train_users$gender, 
                                                  pattern = rebus::or("-unknown-", "OTHER"), 
-                                                 replacement = "")
+                                                 replacement = "unknown")
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -209,9 +209,6 @@ counts <- counts[, -195] # remove REMOVE_LATER column
 # merging counts with train_users
 train_users <- train_users %>% full_join(counts, by = "id")
 
-# changing NAs to 0
-train_users[, 43:ncol(train_users)][is.na(train_users[, 43:ncol(train_users)])] <- 0
-
 
 # --------------------------------------------------------------------------------------------------------
 
@@ -266,9 +263,9 @@ type_counts <- type_counts[-1, ]
 train_users <- train_users %>% full_join(type_counts, by = "id")
 
 # column numbers of vars with action_type counts
-type_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "at_"))
-# changing NAs to 0s in new columns 
-train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
+# type_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "at_"))
+# # changing NAs to 0s in new columns 
+# train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -293,9 +290,9 @@ detail_counts <- detail_counts[-1, ]
 # merging with train_users
 train_users <- train_users %>% full_join(detail_counts, by = "id")
 
-# changing NAs to 0s in new columns
-detail_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "ad_"))
-train_users[, detail_vars][is.na(train_users[, detail_vars])] <- 0
+# # changing NAs to 0s in new columns
+# detail_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "ad_"))
+# train_users[, detail_vars][is.na(train_users[, detail_vars])] <- 0
 
 
 
@@ -322,8 +319,12 @@ device_counts <- device_counts[-1,]
 train_users <- train_users %>% full_join(device_counts, by = "id")
 
 # changing NAs to 0s in new columns
-device_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "d_"))
-train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
+# device_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "d_"))
+# train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
+
+# changing NAs to 0
+first <- which(colnames(train_users) == "num_index")
+train_users[, first:ncol(train_users)][is.na(train_users[, first:ncol(train_users)])] <- 0
 
 
 
@@ -355,7 +356,3 @@ colnames(train)[1] <- "country_destination"
 
 # saving as csv 
 write.csv(x = train, file = "train.csv")
-
-
-
-
