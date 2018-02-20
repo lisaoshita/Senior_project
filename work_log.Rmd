@@ -66,3 +66,9 @@ knitr::opts_chunk$set(echo = TRUE)
 * view variable importance
 * researched ensemble/stacking methods in ML 
 
+#### Week 7 
+
+* removed variables + refit model to see if achieve better accuracy/computationally faster
+    + fit XGBoost to only 250 features - achieved same accuracy + faster, still only predicting a few countries 
+* random forest 
+
