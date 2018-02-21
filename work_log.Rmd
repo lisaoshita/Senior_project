@@ -70,5 +70,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * removed variables + refit model to see if achieve better accuracy/computationally faster
     + fit XGBoost to only 250 features - achieved same accuracy + faster, still only predicting a few countries 
-* random forest 
+* random forest - fit to all variables, with only 10 trees (and then 50) - achieved 87% accuracy both times 
+    + assessed out-of-bag performance (can be used instead of CV)
+    + fit rf to full training + predicted on test - assessed accuracy 
+    + refit random forest to only features with mean decrease gini of greater than 5 (249 features), ran same model, achieved same accuracy 
 
