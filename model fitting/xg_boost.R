@@ -1,6 +1,7 @@
 # =================================================================================================================
 # XGBoost
 # =================================================================================================================
+
 library(xgboost)
 library(dplyr)
 library(magrittr)
@@ -9,8 +10,6 @@ library(magrittr)
 dir <- file.path(getwd(),"data")
 train <- read.csv(file.path(dir, "train.csv"))
 
-# removing row with NA for country destination 
-train <- train[-which(is.na(train$country_destination)), ]
 # removing first column 
 train <- train[,-1]
 # converting all column that are integers to numeric (for xgb)
@@ -110,7 +109,9 @@ xgb.plot.importance(first_20)
 
 # ==============================================================================================================
 
-new_train <- train[, c(1, which(colnames(train) %in% importance$Feature))]
+new_train <- train %>% select(country_destination, importance$Feature)
+# save as csv file to be called in stacking.r
+# write.csv(new_train, "xgb_train.csv")
 
 # set up data
 

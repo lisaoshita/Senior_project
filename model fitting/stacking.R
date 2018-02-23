@@ -35,42 +35,8 @@ test_meta <- cbind(test, M1 = 0, M2 = 0)
 
 
 # ========================================================================================
-# xgboost (put predictions in M1)
-train_set <- train_meta[which(train_meta$fold == 2 | 
-                                train_meta$fold == 3 | 
-                                train_meta$fold == 4 | 
-                                train_meta$fold == 5), ]
-test_set <- train_meta[which(train_meta$fold == 1), ]
 
-exclude <- c(which(colnames(train_set) == "M1"), 
-             which(colnames(train_set) == "M2"), 
-             which(colnames(train_set) == "fold"))
-
-train_m <- xgb.DMatrix(data = data.matrix(train_set[, -c(1, exclude)]), 
-                       label = as.numeric(train_set[,1]) - 1)
-test_m <- xgb.DMatrix(data = data.matrix(test_set[, -c(1, exclude)]), 
-                      label = as.numeric(test_set[,1]) - 1)
-
-parameters <- list("objective" = "multi:softprob",
-                   "num_class" = 12,
-                   eta = 0.3, 
-                   gamma = 0, 
-                   max_depth = 6, 
-                   min_child_weight = 1, 
-                   subsample = 0.8, 
-                   colsample_bytree = 0.9)
-n_round <- 10
-
-xgb_fit <- xgb.train(params = parameters,
-                     data = train_m,
-                     nrounds = n_round)
-
-test_pred <- predict(xgb_fit, newdata = test_m)
-
-predictions <- as.data.frame(matrix(test_pred, nrow = length(test_pred) / 12, ncol = 12, byrow = TRUE)) %>% mutate(label = as.numeric(test_set[,1]),
-                                                                                                                   max_prob = max.col(., "last"))
-
-train_meta$M1[train_meta$fold == 1] <- predictions$max_prob
+# xgboost 
 
 # function to perform CV for xgboost, returns predictions on test set 
 cv_xgboost <- function(train1, train2, train3, train4, test) { 
@@ -80,7 +46,7 @@ cv_xgboost <- function(train1, train2, train3, train4, test) {
                               train_meta$fold == train2 |
                               train_meta$fold == train3 | 
                               train_meta$fold == train4), ]
-  test <- train_meta[which(train_meta$fold == 1), ]
+  test <- train_meta[which(train_meta$fold == test), ]
   
   # exclude M1, M2 and fold columns of train and test sets
   exclude <- c(which(colnames(train) == "M1"), 
@@ -105,9 +71,18 @@ cv_xgboost <- function(train1, train2, train3, train4, test) {
   preds_df <- as.data.frame(matrix(preds, nrow = length(preds) / 12, ncol = 12, byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
                                                                                                           max_prob = max.col(., "last"))
   return(preds_df$max_prob)
+  
   }
 
-y <- cv_xgboost(train1 = 2, train2 = 3, train3 = 4, train4 = 5, test = 1)
+train_meta$M1[train_meta$fold == 1] <- cv_xgboost(train1 = 2, train2 = 3, train3 = 4, train4 = 5, test = 1)
+train_meta$M1[train_meta$fold == 2] <- cv_xgboost(train1 = 3, train2 = 4, train3 = 5, train4 = 1, test = 2)
+train_meta$M1[train_meta$fold == 3] <- cv_xgboost(train1 = 4, train2 = 5, train3 = 1, train4 = 2, test = 3)
+train_meta$M1[train_meta$fold == 4] <- cv_xgboost(train1 = 5, train2 = 1, train3 = 2, train4 = 3, test = 4)
+train_meta$M1[train_meta$fold == 5] <- cv_xgboost(train1 = 1, train2 = 2, train3 = 3, train4 = 4, test = 5)
+
+# ========================================================================================
+
+# random forest 
 
 
 

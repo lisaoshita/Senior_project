@@ -72,6 +72,8 @@ feature_imp <- feature_imp[order(-feature_imp[, ncol(feature_imp)]), ] # decreas
 include <- rownames(feature_imp)[feature_imp[, ncol(feature_imp)] > 5] # features to include (with meandecreasegini > 5)
 
 new_train <- train %>% select(country_destination, include)
+# save as csv file for stacking 
+# write.csv(new_train, file = "rf_train.csv")
 
 # training data 
 new_train_data <- new_train[train_index[,1], ]
