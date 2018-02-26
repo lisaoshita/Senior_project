@@ -75,3 +75,8 @@ knitr::opts_chunk$set(echo = TRUE)
     + fit rf to full training + predicted on test - assessed accuracy 
     + refit random forest to only features with mean decrease gini of greater than 5 (249 features), ran same model, achieved same accuracy 
 
+
+#### Week 8 
+* implement stacked generalization 
+* try over/undersampling (?)
+
