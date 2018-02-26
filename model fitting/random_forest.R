@@ -95,4 +95,6 @@ sum(new_pred == new_test_label) / length(new_pred) # 87.5% accuracy
 # only predicting: NDF, US, FR, other, AU, ES, IT 
 
 
+rf_vars <- colnames(new_train)[-1] # for stacking (251 features)
+
 

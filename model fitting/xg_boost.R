@@ -113,6 +113,8 @@ new_train <- train %>% select(country_destination, importance$Feature)
 # save as csv file to be called in stacking.r
 # write.csv(new_train, "xgb_train.csv")
 
+xgb_vars <- colnames(new_train)[-1] # for stacking (244 features)
+
 # set up data
 
 # training data 
