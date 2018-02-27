@@ -25,7 +25,7 @@ test <- train[-train_index, ]
 # partition data into 5 folds 
 training$fold <- sample(c(1:5), size = nrow(training), prob = rep(0.2, times = 5), replace = TRUE)
 
-# creating train_meta and test_meta
+# creating train_meta and test_meta, store predictions in M1, M2 
 train_meta <- cbind(training, M1 = 0, M2 = 0)
 test_meta <- cbind(test, M1 = 0, M2 = 0)
 
@@ -47,6 +47,7 @@ parameters <- list("objective" = "multi:softprob",
                    min_child_weight = 1, 
                    subsample = 0.8, 
                    colsample_bytree = 0.9)
+
 n_round <- 10
 
 
@@ -132,33 +133,74 @@ train_meta$M2[train_meta$fold == 5] <- cv_rf(train1 = 1, train2 = 2, train3 = 3,
 
 # ========================================================================================
 
-# stacked 
-# fit model to train_meta using M1, M2 as features
-# use model to predict on test_meta
+# fit each model to full training set, predict on test set, store as predictions in M1, M2
+
+# xgboost
+
+# set up training + test
+full_train <- xgb.DMatrix(data = data.matrix(training[ , -c(1, which(colnames(train) == "fold"))]), 
+                          label = as.numeric(training[ , 1]) - 1)
+full_test <- xgb.DMatrix(data = data.matrix(test[ , -c("country_destination")]), 
+                         label= as.numeric(test[ , 1]) - 1)
+
+# fit model 
+xgb_full <- xgb.train(params = parameters, 
+                      data = full_train, 
+                      nrounds = n_round)
+
+# predictions 
+xgb_preds <- predict(xgb_full, newdata = full_test)
+preds_df <- as.data.frame(matrix(xgb_preds, nrow = length(xgb_preds) / 12, ncol = 12, byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
+                                                                                                        max_prob = max.col(., "last"))
+# store predictions in column M1 of test meta 
+test_meta$M1 <- preds_df$max_prob
+
+# ---------------------------------------------------------------------------------------
+
+# random forest 
+
+rf_full <- randomForest(country_destination ~ ., 
+                        data = training[,-which(colnames(training) == "fold")], 
+                        ntree = 50, 
+                        importance = TRUE, 
+                        do.trace = 10, 
+                        type = "prob")
+
+# predictions
+test_meta$M2 <- predict(rf_full, newdata = test[ , -1])
+
+test_meta <- mutate_if(test_meta, is.integer, as.numeric)
+
+  
+# ========================================================================================
+
+# stacking 
+# using xgboost as stacker 
 
 # set up training data 
-stacked_train <- xgb.DMatrix(data = data.matrix(train_meta[, c("M1", "M2")]), 
-                             label = as.numeric(train_meta[,1]) - 1)
+stacked_train <- xgb.DMatrix(data = data.matrix(train_meta[ , c("M1", "M2")]), 
+                             label = as.numeric(train_meta[ , 1]) - 1)
 
 # set up test
-stacked_test <- xgb.DMatrix(data = data.matrix(test_))
+stacked_test <- xgb.DMatrix(data = data.matrix(test_meta[, c("M1", "M2")]),
+                            label = as.numeric(test_meta[ , 1]) - 1)
 
 # fit xgboost 
 stacked_xgb <- xgb.train(params = parameters, 
                          data = stacked_train, 
                          nrounds = n_round)
 
-#   
-stacked_preds <- predict(stacked_xgb, newdata = test_m)
+# predict on test 
+stacked_preds <- predict(stacked_xgb, newdata = stacked_test)
 
+# convert to data frame
+stacked_predsdf <- as.data.frame(matrix(stacked_preds, nrow = length(stacked_preds) / 12, ncol = 12, byrow = TRUE)) %>% 
+  mutate(label = as.numeric(test_meta[,1]),
+         max_prob = max.col(., "last"))
 
+# accuracy - 87.6%
+sum(stacked_predsdf$max_prob == stacked_predsdf$label) / nrow(stacked_predsdf)
 
-
-
-
-
-
-
-
-
+# confusion matrix 
+table(stacked_predsdf$max_prob, stacked_predsdf$label)
 
