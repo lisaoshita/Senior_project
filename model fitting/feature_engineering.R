@@ -6,8 +6,8 @@
 
 # load data + packages
 dir <- file.path(getwd(),"data")
-age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
-countries <- read.csv(file.path(dir, "countries.csv"))
+# age_gender <- read.csv(file.path(dir, "age_gender_bkts.csv"))
+# countries <- read.csv(file.path(dir, "countries.csv"))
 sessions <- read.csv(file.path(dir, "sessionsSample.csv"))
 sessions <- sessions[, -1] # removing extra X column 
 train_users <- read.csv(file.path(dir, "train_users_2.csv"))
@@ -18,7 +18,7 @@ library(rebus)
 library(caret)
 
 # converting all factors to character
-countries <- dplyr::mutate_if(countries, is.factor, as.character)
+# countries <- dplyr::mutate_if(countries, is.factor, as.character)
 sessions <- dplyr::mutate_if(sessions, is.factor, as.character)
 train_users <- dplyr::mutate_if(train_users, is.factor, as.character)
 
@@ -97,6 +97,30 @@ train_users$firstbook_sn[as.numeric(train_users$firstbook_m) >= 10 &
                            as.numeric(train_users$firstbook_m) <= 11] <- "fall"
 train_users$firstbook_sn[as.numeric(train_users$firstbook_m) == 12 |  
                            as.numeric(train_users$firstbook_m) <= 2] <- "winter"
+
+
+# --------------------------------------------------------------------------------------------------------
+# lag of date variables 
+# --------------------------------------------------------------------------------------------------------
+
+
+# days between date account created and date of first booking 
+train_users$lag_acb <- train_users$firstbook_date - train_users$acct_created_date
+
+# divide lag_acb into 4 bins: (0, [1,365], [-346, 0], NA)
+train_users$lag_acb_bin[train_users$lag_acb == 0] <- "0"
+train_users$lag_acb_bin[train_users$lag_acb > 0] <- "[1, 365]"
+train_users$lag_acb_bin[train_users$lag_acb < 0] <- "[-349, 0)"
+train_users$lag_acb_bin[is.na(train_users$lag_acb)] <- "NA"
+
+
+# days between date first booking and time stamp first active
+train_users$lag_bts <- train_users$firstbook_date - train_users$firstactive_date
+
+# divide lag_bts into 3 bins: (0, [1, 1369], NA)
+train_users$lag_bts_bin[train_users$lag_bts == 0] <- "0"
+train_users$lag_bts_bin[train_users$lag_bts > 0] <- "[1, 1369]"
+train_users$lag_bts_bin[is.na(train_users$lag_bts)] <- "NA"
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -179,29 +203,43 @@ counts <- data.frame(matrix(NA, nrow = 1,
                             ncol = length(unique(sessions$action)) + 1))
 colnames(counts) <- c("id", paste("num", unique(sessions$action), sep = "_"))
 
+
+
 # function to count occurences of each type of action for each user 
 get_action_counts <- function(user) {
-  df <- sessions %>% filter(user_id == user) %>% count(action) # subsetting rows 
+  
+  df <- sessions %>% filter(user_id == user) %>% count(action) # subsetting rows
+  
   if (nrow(df) <= 1) { 
+    
     df_t <- as.data.frame(data.table::transpose(df))  
     df_t$REMOVE_LATER <- NA # adding extra column (to retain df class)
     colnames(df_t) <- c(paste("num", df$action, sep = "_"), "REMOVE_LATER") # adding column names 
     df_t <- df_t[-1, ] # removing unecessary first row 
+    
   } else {
+    
     df_t <- as.data.frame(data.table::transpose(df))[-1, ] 
     colnames(df_t) <- paste("num", df$action, sep = "_") 
+    
   }
+  
   df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)  
   df_t$id <- user # adding user id column
+  
   return(df_t)
 }
+
+
 
 # initialize empty list
 nums <- list()
 unique_users <- unique(sessions$user_id) # iterate over each unique user and append to list 
+
 for(i in 1:length(unique_users)) {
   nums[[i]] <- get_action_counts(unique_users[i])
 }
+
 counts <- counts %>% dplyr::bind_rows(nums) # bind data frames in nums to counts df
 counts <- counts[-1, ] # remove first row of NAs
 counts <- counts[, -195] # remove REMOVE_LATER column 
@@ -223,24 +261,33 @@ colnames(type_counts) <- c("id", paste("num", unique(sessions$action_type), sep 
 
 # function to get counts for each var 
 get_counts <- function(user, var) {
+  
   df <- sessions %>% filter(user_id == user) %>% count_(var) # subsetting rows to each user
+  
   if (nrow(df) <= 1) {
+    
     df_t <- as.data.frame(data.table::transpose(df))
     df_t$REMOVE_LATER <- NA # adding extra column to retain df class
     colnames(df_t) <- c(paste("num", df[[var]], sep = "_"), "REMOVE_LATER") # adding column names
     df_t <- df_t[-1, ] # removing unecessary first row
+    
   } else {
+    
     df_t <- as.data.frame(data.table::transpose(df))[-1, ]
     colnames(df_t) <- paste("num", df[[var]], sep = "_")
+  
   }
+  
   df_t <- dplyr::mutate_if(df_t, is.character, as.numeric)
   df_t$id <- user # adding user id column
+  
   return(df_t)
 }
 
 
 # initialize empty list, append counts to list 
 num_types <- list()
+
 for(i in 1:length(unique_users)) {
   num_types[[i]] <- get_counts(unique_users[i], "action_type")
 }
@@ -248,11 +295,14 @@ for(i in 1:length(unique_users)) {
 
 # function to turn list into df + remove certain columns 
 merge_counts <- function(df, count_list, var_name) {
+  
   df <- df %>% dplyr::bind_rows(count_list)
   #df <- df[-1, ] # removing first row of NAs
   df <- df[, -which(colnames(df) == "REMOVE_LATER")] # removing REMOVE_LATER
   colnames(df) <- c("id", paste(var_name, colnames(df)[-1], sep = "_")) # adding identifier to column names
+  
   return(df)
+
 } 
 
 
@@ -261,11 +311,6 @@ type_counts <- type_counts[-1, ]
 
 # merging with train_users
 train_users <- train_users %>% full_join(type_counts, by = "id")
-
-# column numbers of vars with action_type counts
-# type_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "at_"))
-# # changing NAs to 0s in new columns 
-# train_users[, type_vars][is.na(train_users[, type_vars])] <- 0
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -290,11 +335,6 @@ detail_counts <- detail_counts[-1, ]
 # merging with train_users
 train_users <- train_users %>% full_join(detail_counts, by = "id")
 
-# # changing NAs to 0s in new columns
-# detail_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "ad_"))
-# train_users[, detail_vars][is.na(train_users[, detail_vars])] <- 0
-
-
 
 # --------------------------------------------------------------------------------------------------------
 
@@ -318,14 +358,32 @@ device_counts <- device_counts[-1,]
 # merging with train_users
 train_users <- train_users %>% full_join(device_counts, by = "id")
 
-# changing NAs to 0s in new columns
-# device_vars <- which(stringr::str_detect(colnames(train_users), pattern = START %R% "d_"))
-# train_users[, device_vars][is.na(train_users[, device_vars])] <- 0
-
 # changing NAs to 0
 first <- which(colnames(train_users) == "num_index")
 train_users[, first:ncol(train_users)][is.na(train_users[, first:ncol(train_users)])] <- 0
 
+
+# --------------------------------------------------------------------------------------------------------
+# seconds elapsed for each user
+# --------------------------------------------------------------------------------------------------------
+
+
+# compute summary statistics of secs_elapsed for each unique user 
+secs_elapsed <- sessions %>% group_by(user_id) %>% summarise(sum_secs = sum(secs_elapsed, na.rm = TRUE),
+                                                             mean_secs = mean(secs_elapsed, na.rm = TRUE), 
+                                                             median_secs = median(secs_elapsed, na.rm = TRUE),
+                                                             std_secs = sd(secs_elapsed, na.rm = TRUE), 
+                                                             min_secs = min(secs_elapsed, na.rm = TRUE),
+                                                             max_secs = max(secs_elapsed, na.rm = TRUE))
+
+# removing row with no user_id
+secs_elapsed <- secs_elapsed[-which(secs_elapsed$user_id == ""), ]
+
+# rename user_id to id (to match train_users)
+colnames(secs_elapsed)[1] <- "id"
+
+# merge with train_users 
+train_users <- train_users %>% left_join(secs_elapsed, by = "id")
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -334,15 +392,15 @@ train_users[, first:ncol(train_users)][is.na(train_users[, first:ncol(train_user
 
 # encode all except: id, date_account_created, timestamp_first_active, date_first_booking, gender,
 #                    age, country_destination, acct_created_date, firstactive_date, firstbook_date, 
-#                    book, lat_destination, lng_destination, destination_km2, all sessions count variables
+#                    book, lat_destination, lng_destination, destination_km2, all sessions count variables, secs_elapsed variables
 
 # removing row with NA for country_destination
 train_users <- train_users[-which(is.na(train_users$country_destination)), ]
 
-to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), starts_with("ad_"),
-                                       starts_with("at_"), id, date_account_created, timestamp_first_active,
-                                       date_first_booking, gender, age, country_destination, acct_created_date,
-                                       firstactive_date, firstbook_date))
+to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), starts_with("ad_"), starts_with("at_"), 
+                                       id, date_account_created, timestamp_first_active, date_first_booking, gender, 
+                                       age, country_destination, acct_created_date, firstactive_date, firstbook_date, 
+                                       ends_with("secs"), lag_acb, lag_bts))
 
 # converting all NAs to -1 (gbm doesn't work with NAs)
 to_encode[is.na(to_encode)] <- -1 
@@ -350,9 +408,11 @@ to_encode[is.na(to_encode)] <- -1
 train <- cbind(train_users$country_destination,
                data.frame(predict(dummyVars("~.", data = to_encode), newdata = to_encode)),
                train_users %>% select(starts_with("num_"), starts_with("d_"),
-                                      starts_with("ad_"), starts_with("at_")))
+                                      starts_with("ad_"), starts_with("at_"), 
+                                      ends_with("secs")))
 
 colnames(train)[1] <- "country_destination"
 
 # saving as csv 
 write.csv(x = train, file = "train.csv")
+
