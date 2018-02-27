@@ -77,6 +77,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #### Week 8 
-* implement stacked generalization 
+* implement stacked generalization, based on a kaggle tutorial - achieved same accuracy (87%) 
 * try over/undersampling (?)
 
