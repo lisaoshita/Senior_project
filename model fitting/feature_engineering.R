@@ -136,7 +136,7 @@ for (i in ages) {
 }
 
 # setting all users with ages > 2000 or < 15 as -1
-train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
+train_users$age_clean[train_users$age < 15 | train_users$age > 110 | is.na(train_users$age)] <- -1
 
 # age ranges 
 # 18 different age ranges (same as ranges in age_gender df)
@@ -387,6 +387,10 @@ secs_elapsed[is.na(secs_elapsed)] <- -1
 
 # merge with train_users 
 train_users <- train_users %>% left_join(secs_elapsed, by = "id")
+
+
+# save train_users as csv file
+write.csv(train_users, file = "train_users.csv")
 
 
 # --------------------------------------------------------------------------------------------------------
