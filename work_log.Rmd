@@ -77,6 +77,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #### Week 8 
+
 * implement stacked generalization, based on a kaggle tutorial - achieved same accuracy (87%) 
-* try over/undersampling (?)
+* over/undersampling of training data
+    + wrote function to sample rows from each country with or without replacement until n = 10000
+    + fit xgboost to new training data, predicted on held out test set (without over/under sampling) 
+    + resulted in worse accuracy 
+* added more features to training data
+    + added difference between date account created and date first booking (days) - split into 4 bins
+    + added difference between date first booking and timestamp first active (days) - split into 3 bins
+    + added summary statistics of seconds elapsed for each user in sessions data 
+    + achieve same accuracy after refitting model to new training data 
+* maybe try KNN to predict age + other missing values
+* retried over/undersampling - implemented it manually 
+    + achieved around the same accuracy, but the model is now able to predict all countries (not well)
 
