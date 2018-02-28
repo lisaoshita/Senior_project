@@ -140,8 +140,8 @@ train_users$age_clean[train_users$age < 15 | train_users$age > 110 ] <- -1
 
 # age ranges 
 # 18 different age ranges (same as ranges in age_gender df)
-train_users$age_bucket <- cut(train_users$age_clean, 
-                              breaks = c(0, seq(4, 104, by = 5)), 
+train_users$age_bucket <- cut(train_users$age_clean,
+                              breaks = c(0, seq(4, 104, by = 5)),
                               right = TRUE)
 
 
@@ -170,16 +170,16 @@ train_users$gender_clean <- stringr::str_replace(train_users$gender,
 
 
 # convert gender to lower case to resemble gender in age_gender df
-train_users$gender_clean <- stringr::str_to_lower(train_users$gender_clean)
+# train_users$gender_clean <- stringr::str_to_lower(train_users$gender_clean)
 
 # reformat age_bucket to resemble age_bucket in age_gender
-train_users$age_bucket <- as.character(plyr::mapvalues(train_users$age_bucket, 
+train_users$age_bucket <- as.character(plyr::mapvalues(train_users$age_bucket,
                                                        from = levels(train_users$age_bucket),
-                                                       to = c("0-4", "5-9", "10-14", "15-19", 
-                                                              "20-24", "25-29", "30-34", "35-39", 
+                                                       to = c("0-4", "5-9", "10-14", "15-19",
+                                                              "20-24", "25-29", "30-34", "35-39",
                                                               "40-44", "45-49", "50-54", "55-59",
-                                                              "60-64", "65-69", "70-74", "75-79", 
-                                                              "80-84", "85-89", "90-94", "95-99", 
+                                                              "60-64", "65-69", "70-74", "75-79",
+                                                              "80-84", "85-89", "90-94", "95-99",
                                                               "100+")))
 
 # # for df merging: 
@@ -382,6 +382,9 @@ secs_elapsed <- secs_elapsed[-which(secs_elapsed$user_id == ""), ]
 # rename user_id to id (to match train_users)
 colnames(secs_elapsed)[1] <- "id"
 
+# recode NAs to -1 
+secs_elapsed[is.na(secs_elapsed)] <- -1
+
 # merge with train_users 
 train_users <- train_users %>% left_join(secs_elapsed, by = "id")
 
@@ -399,8 +402,8 @@ train_users <- train_users[-which(is.na(train_users$country_destination)), ]
 
 to_encode <- train_users %>% select(-c(starts_with("num_"), starts_with("d_"), starts_with("ad_"), starts_with("at_"), 
                                        id, date_account_created, timestamp_first_active, date_first_booking, gender, 
-                                       age, country_destination, acct_created_date, firstactive_date, firstbook_date, 
-                                       ends_with("secs"), lag_acb, lag_bts))
+                                       age, country_destination, acct_created_date, firstactive_date, 
+                                       firstbook_date, ends_with("secs"), lag_acb, lag_bts))
 
 # converting all NAs to -1 (gbm doesn't work with NAs)
 to_encode[is.na(to_encode)] <- -1 
@@ -415,4 +418,5 @@ colnames(train)[1] <- "country_destination"
 
 # saving as csv 
 write.csv(x = train, file = "train.csv")
+x <- data.frame(predict(dummyVars("~.", data = train_users %>% select(age_bucket)), newdata = train_users %>% select(age_bucket)))
 
