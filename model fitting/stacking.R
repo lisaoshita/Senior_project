@@ -23,10 +23,10 @@ training <- train[train_index, ]
 test <- train[-train_index, ]
 
 # partition data into 5 folds 
-training$fold <- sample(c(1:5), size = nrow(training), prob = rep(0.2, times = 5), replace = TRUE)
+sampled_train$fold <- sample(c(1:5), size = nrow(sampled_train), prob = rep(0.2, times = 5), replace = TRUE)
 
 # creating train_meta and test_meta, store predictions in M1, M2 
-train_meta <- cbind(training, M1 = 0, M2 = 0)
+train_meta <- cbind(sampled_train, M1 = 0, M2 = 0)
 test_meta <- cbind(test, M1 = 0, M2 = 0)
 
 # fit model to training fold, predict on test fold (hold out one fold, and combine other folds to train)
@@ -138,9 +138,9 @@ train_meta$M2[train_meta$fold == 5] <- cv_rf(train1 = 1, train2 = 2, train3 = 3,
 # xgboost
 
 # set up training + test
-full_train <- xgb.DMatrix(data = data.matrix(training[ , -c(1, which(colnames(train) == "fold"))]), 
-                          label = as.numeric(training[ , 1]) - 1)
-full_test <- xgb.DMatrix(data = data.matrix(test[ , -c("country_destination")]), 
+full_train <- xgb.DMatrix(data = data.matrix(sampled_train[ , -c(1, which(colnames(train) == "fold"))]), 
+                          label = as.numeric(sampled_train[ , 1]) - 1)
+full_test <- xgb.DMatrix(data = data.matrix(test[ , -1]), 
                          label= as.numeric(test[ , 1]) - 1)
 
 # fit model 
@@ -160,7 +160,7 @@ test_meta$M1 <- preds_df$max_prob
 # random forest 
 
 rf_full <- randomForest(country_destination ~ ., 
-                        data = training[,-which(colnames(training) == "fold")], 
+                        data = sampled_train[,-which(colnames(sampled_train) == "fold")], 
                         ntree = 50, 
                         importance = TRUE, 
                         do.trace = 10, 
