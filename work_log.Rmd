@@ -17,11 +17,13 @@ knitr::opts_chunk$set(echo = TRUE)
     + machine learning
 * took notes in r markdown on all courses 
 
+
 #### Week 2
 
 * Continued learning about machine learning algorithms
     + coursera 
     + text readings 
+
 
 #### Week 3 
 
@@ -31,6 +33,7 @@ knitr::opts_chunk$set(echo = TRUE)
     + graphed variables 
     + looked at missing values 
 * applied boosting model with all variables data, achieved 62% accuracy, only predicted US and NDF
+
 
 #### Week 4 
 
@@ -45,6 +48,7 @@ knitr::opts_chunk$set(echo = TRUE)
     + with sessions data: took number of occurences of each unique action type for each user - will continue to do this for all vars in the sessions df 
 * fit initial boosting model - 100% accuracy? 
 
+
 #### Week 5
 
 * 5-fold cross validation of boosted model - tried using function in caret package--R kept crashing 
@@ -58,13 +62,15 @@ knitr::opts_chunk$set(echo = TRUE)
 * fit an xgboost algorithm, similar to what Keiichi Kuroyanagi (3rd place winner) did, and based off of xgboost tutorials and readings
     + cross-validation on the training data (100% accuracy) + confusion matrix
     + fit to the full training data and predicted on hold out test data (100% accuracy) + confusion matrix + variable importance
-    
+
+
 #### Week 6
 
 * figured out 100% accuracy issue - adjusted model and data accordingly 
 * fit new xgboost - achieved 87% accuracy (obtained with CV as well as with model fit to the full training data)
 * view variable importance
 * researched ensemble/stacking methods in ML 
+
 
 #### Week 7 
 
@@ -91,4 +97,10 @@ knitr::opts_chunk$set(echo = TRUE)
 * maybe try KNN to predict age + other missing values
 * retried over/undersampling - implemented it manually 
     + achieved around the same accuracy, but the model is now able to predict all countries (not well)
+    + tried fitting xgboost to only data consisting of under-represented countries 
+
+#### Week 9 
+* looked into case-control sampling
+* refit random forest to new sampled data- achieved same accuracy, but now it's predicting all countries 
+* 
 
