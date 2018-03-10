@@ -1,12 +1,11 @@
 # =================================================================================================================
-
-# Overssampling and undersampling 
-
+# Over/under sampling 
 # =================================================================================================================
 
 library(magrittr)
 library(dplyr)
 library(xgboost)
+library(randomForest)
 
 # load data
 dir <- file.path(getwd(),"data")
@@ -36,7 +35,6 @@ test <- train[-train_index, ]
 # 
 # }
 # 
-# 
 # countries <- as.character(unique(train$country_destination))
 # replace_vals <- c(FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
 # 
@@ -44,14 +42,10 @@ test <- train[-train_index, ]
 
 
 # =================================================================================================================
-
 # retrying over/undersampling - achieves 87% accuracy 
-
 # =================================================================================================================
 
 sampled_list <- list()
-
-table(training$country_destination)
 
 # oversampling
 sampled_list[[1]] <- training %>% filter(country_destination == "AU") %>% sample_n(size = 3000, replace = TRUE)
@@ -72,13 +66,12 @@ sampled_list[[11]] <- training %>% filter(country_destination == "FR") #%>% samp
 sampled_list[[12]] <- training %>% filter(country_destination == "other")
 
 sampled_train <- bind_rows(sampled_list)
-# fit xgboost to new sampled training set 
+sampled_train[ ,colnames(sampled_train)[colSums(is.na(sampled_train)) > 0]] <- -1
+test[ ,colnames(test)[colSums(is.na(test)) > 0]] <- -1
 
 
 # =================================================================================================================
-
-# fit model to new sampled training set 
-
+# fit xgboost to new sampled training set 
 # =================================================================================================================
 
 # convert to Dmatrix 
@@ -125,63 +118,74 @@ table(sampled_predsdf$max_prob, sampled_predsdf$label) # predicting country 8 pe
 # feature importance
 xgb.plot.importance(xgb.importance(colnames(sampled_train_d), xgb_sampled)[1:20])
 
-
+# =================================================================================================================
+# fit random forest to sampled data 
 # =================================================================================================================
 
+rf_model_s <- randomForest(country_destination ~ ., 
+                           data = sampled_train, 
+                           ntree = 50, 
+                           importance = TRUE, 
+                           do.trace = 10)
+
+rf_model_s # 88.1% accuracy
+
+rf_pred_s <- predict(rf_model_s, newdata = test)
+table(rf_pred_s, test$country_destination)
+sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 88.1%
+
+# =================================================================================================================
 # fitting model to only minority countries (excluding NDF, US, other)
+# =================================================================================================================
 
-minority_countries <- training[training$country_destination != "NDF" &
-                                 training$country_destination != "US" &
-                                 training$country_destination != "other", ]
-
-minority_countries$country_destination <- as.character(minority_countries$country_destination)
-
-# convert to Dmatrix
-minority_d <- xgb.DMatrix(data = data.matrix(minority_countries[ , -1]),
-                          label = as.numeric(as.factor(minority_countries$country_destination)) - 1)
-
-new_params <- list("objective" = "multi:softprob",
-                   "num_class" = 9,
-                   eta = 0.3, 
-                   gamma = 0, 
-                   max_depth = 6, 
-                   min_child_weight = 1, 
-                   subsample = 0.8, 
-                   colsample_bytree = 0.9)
-
-# fit xgboost
-xgb_min <- xgb.train(params = new_params, 
-                     data = minority_d,
-                     nrounds = n_round)
-
-# set up test data 
-min_country_test <- test[test$country_destination != "NDF" &
-                           test$country_destination != "US" &
-                           test$country_destination != "other", ]
-
-min_country_test$country_destination <- as.character(min_country_test$country_destination)
-
-# convert to Dmatrix
-min_test_d <- xgb.DMatrix(data = data.matrix(min_country_test[, -1]),
-                          label = as.numeric(as.factor(min_country_test$country_destination)) - 1)
-
-min_preds <- predict(xgb_min, min_test_d)
-
-# convert predictions to df 
-min_predsdf <- as.data.frame(matrix(min_preds, 
-                                    nrow = length(min_preds) / 9, 
-                                    ncol = 9, 
-                                    byrow = TRUE)) %>% mutate(label = as.numeric(as.factor(min_country_test$country_destination)),
-                                                              max_prob = max.col(., "last"))
-
-# accuracy
-sum(min_predsdf$label == min_predsdf$max_prob) / nrow(min_predsdf) # 0.2905398
-
-# confusion matrix
-table(min_predsdf$max_prob, min_predsdf$label)
-
-
-
-
+# minority_countries <- training[training$country_destination != "NDF" &
+#                                  training$country_destination != "US" &
+#                                  training$country_destination != "other", ]
+# 
+# minority_countries$country_destination <- as.character(minority_countries$country_destination)
+# 
+# # convert to Dmatrix
+# minority_d <- xgb.DMatrix(data = data.matrix(minority_countries[ , -1]),
+#                           label = as.numeric(as.factor(minority_countries$country_destination)) - 1)
+# 
+# new_params <- list("objective" = "multi:softprob",
+#                    "num_class" = 9,
+#                    eta = 0.3, 
+#                    gamma = 0, 
+#                    max_depth = 6, 
+#                    min_child_weight = 1, 
+#                    subsample = 0.8, 
+#                    colsample_bytree = 0.9)
+# 
+# # fit xgboost
+# xgb_min <- xgb.train(params = new_params, 
+#                      data = minority_d,
+#                      nrounds = n_round)
+# 
+# # set up test data 
+# min_country_test <- test[test$country_destination != "NDF" &
+#                            test$country_destination != "US" &
+#                            test$country_destination != "other", ]
+# 
+# min_country_test$country_destination <- as.character(min_country_test$country_destination)
+# 
+# # convert to Dmatrix
+# min_test_d <- xgb.DMatrix(data = data.matrix(min_country_test[, -1]),
+#                           label = as.numeric(as.factor(min_country_test$country_destination)) - 1)
+# 
+# min_preds <- predict(xgb_min, min_test_d)
+# 
+# # convert predictions to df 
+# min_predsdf <- as.data.frame(matrix(min_preds, 
+#                                     nrow = length(min_preds) / 9, 
+#                                     ncol = 9, 
+#                                     byrow = TRUE)) %>% mutate(label = as.numeric(as.factor(min_country_test$country_destination)),
+#                                                               max_prob = max.col(., "last"))
+# 
+# # accuracy
+# sum(min_predsdf$label == min_predsdf$max_prob) / nrow(min_predsdf) # 0.2905398
+# 
+# # confusion matrix
+# table(min_predsdf$max_prob, min_predsdf$label)
 
 
