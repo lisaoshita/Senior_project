@@ -17,13 +17,11 @@ knitr::opts_chunk$set(echo = TRUE)
     + machine learning
 * took notes in r markdown on all courses 
 
-
 #### Week 2
 
 * Continued learning about machine learning algorithms
     + coursera 
     + text readings 
-
 
 #### Week 3 
 
@@ -33,7 +31,6 @@ knitr::opts_chunk$set(echo = TRUE)
     + graphed variables 
     + looked at missing values 
 * applied boosting model with all variables data, achieved 62% accuracy, only predicted US and NDF
-
 
 #### Week 4 
 
@@ -47,7 +44,6 @@ knitr::opts_chunk$set(echo = TRUE)
     + merged age_gender and countries data with train_users 
     + with sessions data: took number of occurences of each unique action type for each user - will continue to do this for all vars in the sessions df 
 * fit initial boosting model - 100% accuracy? 
-
 
 #### Week 5
 
@@ -63,14 +59,12 @@ knitr::opts_chunk$set(echo = TRUE)
     + cross-validation on the training data (100% accuracy) + confusion matrix
     + fit to the full training data and predicted on hold out test data (100% accuracy) + confusion matrix + variable importance
 
-
 #### Week 6
 
 * figured out 100% accuracy issue - adjusted model and data accordingly 
 * fit new xgboost - achieved 87% accuracy (obtained with CV as well as with model fit to the full training data)
 * view variable importance
 * researched ensemble/stacking methods in ML 
-
 
 #### Week 7 
 
@@ -80,7 +74,6 @@ knitr::opts_chunk$set(echo = TRUE)
     + assessed out-of-bag performance (can be used instead of CV)
     + fit rf to full training + predicted on test - assessed accuracy 
     + refit random forest to only features with mean decrease gini of greater than 5 (249 features), ran same model, achieved same accuracy 
-
 
 #### Week 8 
 
@@ -102,5 +95,5 @@ knitr::opts_chunk$set(echo = TRUE)
 #### Week 9 
 * looked into case-control sampling
 * refit random forest to new sampled data- achieved same accuracy, but now it's predicting all countries 
-* 
+* re-tried stacked model with the new sampled data, achieved same accuracy, but predicting all countries 
 
