@@ -42,8 +42,6 @@ test <- train[-train_index, ]
 
 
 # =================================================================================================================
-# retrying over/undersampling - achieves 87% accuracy 
-# =================================================================================================================
 
 sampled_list <- list()
 
@@ -135,8 +133,7 @@ rf_model_s # 88.1% accuracy
 
 rf_pred_s <- predict(rf_model_s, newdata = test)
 table(rf_pred_s, test$country_destination)
-sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 87.2%
-
+sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 90% accuracy 
 
 
 # =================================================================================================================
