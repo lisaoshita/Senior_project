@@ -80,11 +80,9 @@ sampled_train_d <- xgb.DMatrix(data = data.matrix(sampled_train[ , -1]),
 parameters <- list("objective" = "multi:softprob",
                    "num_class" = 12,
                    eta = 0.3, 
-                   gamma = 0, 
                    max_depth = 6, 
                    min_child_weight = 1, 
-                   subsample = 0.8, 
-                   colsample_bytree = 0.9)
+                   subsample = 0.8)
 
 n_round <- 10
 
@@ -94,14 +92,14 @@ xgb_sampled <- xgb.train(params = parameters,
                          nrounds = n_round)
 
 # convert test to Dmatrix
-test_s <- xgb.DMatrix(data = data.matrix(test[, -1]),
-                    label = as.numeric(test$country_destination) - 1)
+test_s_d <- xgb.DMatrix(data = data.matrix(test[, -1]),
+                        label = as.numeric(test$country_destination) - 1)
 
 # predict 
-sampled_preds <- predict(xgb_sampled, newdata = test_s)
+sampled_preds_xgb <- predict(xgb_sampled, newdata = test_s_d)
 
 # convert predictions to df 
-sampled_predsdf <- as.data.frame(matrix(sampled_preds, 
+sampled_predsdf_xgb <- as.data.frame(matrix(sampled_preds, 
                                         nrow = length(sampled_preds) / 12, 
                                         ncol = 12, 
                                         byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
@@ -114,10 +112,12 @@ sum(sampled_predsdf$max_prob == sampled_predsdf$label) / nrow(sampled_predsdf)
 table(sampled_predsdf$max_prob, sampled_predsdf$label) # predicting country 8 perfectly 
 
 # feature importance
-xgb.plot.importance(xgb.importance(colnames(sampled_train_d), xgb_sampled)[1:20])
+feature_imp_s_xgb <- xgb.importance(feature_names = colnames(sampled_train_d), # only includes 189 features (196)
+                                    model = xgb_sampled)
+xgb.plot.importance(feature_imp_s_xgb[1:20])
 
 # ncdg5 metric 
-ndcg5(sampled_preds, test_s)
+ndcg5(sampled_preds, test_s_d) # 0.918
 
 # =================================================================================================================
 # fit random forest to sampled data 
@@ -134,6 +134,9 @@ rf_model_s # 88.1% accuracy
 rf_pred_s <- predict(rf_model_s, newdata = test)
 table(rf_pred_s, test$country_destination)
 sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 90% accuracy 
+
+feature_imp_s_rf <- rf_model_s$importance
+feature_imp_s_rf <- feature_imp_s_rf[order(-feature_imp_s_rf[, ncol(feature_imp_s_rf)]), ] # decreasing order
 
 
 # =================================================================================================================
