@@ -25,7 +25,8 @@ train <- mutate_if(train, is.integer, as.numeric)
 
 # training data 
 train_index <- caret::createDataPartition(y = train$country_destination, p = 0.70, list = FALSE)
-train_data <- train[train_index[,1], ]
+training <- train[train_index[,1], ]
+training[ ,colnames(training)[colSums(is.na(training)) > 0]] <- -1
 
 # test data 
 test_data <- train[-train_index[,1], -1]
@@ -39,7 +40,7 @@ test_label <- train[-train_index[,1], 1]
 # mtry: sqrt(number of predictors)
 # default ntree is 500 - takes a long time, ntree = 50 still takes a long time 
 
-rf_model <- randomForest(country_destination ~ ., data = train_data, ntree = 50, importance = TRUE, do.trace = 10)
+rf_model <- randomForest(country_destination ~ ., data = training, ntree = 50, importance = TRUE, do.trace = 10)
 rf_model # error rate: 12.46%, accuracy: 87.54% (out-of-bag, similar to CV)
 
 # predictions on test data
