@@ -118,6 +118,9 @@ table(sampled_predsdf$max_prob, sampled_predsdf$label) # predicting country 8 pe
 # feature importance
 xgb.plot.importance(xgb.importance(colnames(sampled_train_d), xgb_sampled)[1:20])
 
+# ncdg5 metric 
+ndcg5(sampled_preds, test_s)
+
 # =================================================================================================================
 # fit random forest to sampled data 
 # =================================================================================================================
@@ -132,7 +135,9 @@ rf_model_s # 88.1% accuracy
 
 rf_pred_s <- predict(rf_model_s, newdata = test)
 table(rf_pred_s, test$country_destination)
-sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 88.1%
+sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 87.2%
+
+
 
 # =================================================================================================================
 # fitting model to only minority countries (excluding NDF, US, other)
