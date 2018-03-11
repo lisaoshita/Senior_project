@@ -93,7 +93,9 @@ knitr::opts_chunk$set(echo = TRUE)
     + tried fitting xgboost to only data consisting of under-represented countries 
 
 #### Week 9 
+
 * looked into case-control sampling
 * refit random forest to new sampled data- achieved same accuracy, but now it's predicting all countries 
 * re-tried stacked model with the new sampled data, achieved same accuracy, but predicting all countries 
+* implemented Normalized discounted cumulative gain score, the metric used in the competition - achieved 0.92 (???)
 
