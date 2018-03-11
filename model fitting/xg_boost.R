@@ -16,21 +16,16 @@ train <- train[,-1]
 train <- mutate_if(train, is.integer, as.numeric)
 
 # set up data
-# full data 
-full_variables <- data.matrix(train[,-1]) # with country_destination removed
-full_label <- as.numeric(train$country_destination) - 1 # converting to numeric, subtracting 1 (to work with xgb)
-full_matrix <- xgb.DMatrix(data = full_variables, label = full_label)
-
 # training data 
 train_index <- caret::createDataPartition(y = train$country_destination, p = 0.70, list = FALSE)
-train_data <- full_variables[train_index, ]
-train_label <- full_label[train_index[,1]]
-train_matrix <- xgb.DMatrix(data = train_data, label = train_label)
+training <- train[train_index, ]
+train_matrix <- xgb.DMatrix(data = data.matrix(training[, -1]), 
+                            label = as.numeric(training$country_destination) - 1)
 
 # test data 
-test_data <- full_variables[-train_index, ]
-test_label <- full_label[-train_index[,1]]
-test_matrix <- xgb.DMatrix(data = test_data, label = test_label)
+test <- train[-train_index, ]
+test_matrix <- xgb.DMatrix(data = data.matrix(test[, -1]), 
+                           label = as.numeric(test$country_destination) - 1)
 
 # ================================================================================================================
 
@@ -86,6 +81,8 @@ predictions <- matrix(heldout_test_pred,
 # confusionMatrix(factor(predictions$label),
 #                 factor(predictions$max_prob),
 #                 mode = "everything")
+
+ndcg5(heldout_test_pred, test_matrix) # 0.927 
 
 table(predictions$max_prob, predictions$label) # only predicting countries 8, 10, 12
 
