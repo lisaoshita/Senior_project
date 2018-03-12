@@ -112,9 +112,11 @@ sum(sampled_predsdf$max_prob == sampled_predsdf$label) / nrow(sampled_predsdf)
 table(sampled_predsdf$max_prob, sampled_predsdf$label) # predicting country 8 perfectly 
 
 # feature importance
-feature_imp_s_xgb <- xgb.importance(feature_names = colnames(sampled_train_d), # only includes 189 features (196)
+feature_imp_s_xgb <- xgb.importance(feature_names = colnames(sampled_train_d), # only 192 features 
                                     model = xgb_sampled)
 xgb.plot.importance(feature_imp_s_xgb[1:20])
+
+imp_f_xgb <- feature_imp_s_xgb$Feature # 192 features - use in stacking.R
 
 # ncdg5 metric 
 ndcg5(sampled_preds, test_s_d) # 0.918
@@ -137,6 +139,43 @@ sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 90% accuracy
 
 feature_imp_s_rf <- rf_model_s$importance
 feature_imp_s_rf <- feature_imp_s_rf[order(-feature_imp_s_rf[, ncol(feature_imp_s_rf)]), ] # decreasing order
+
+
+# =================================================================================================================
+# fitting xgboost to features found to be important with random forest 
+
+imp_f_rf <- rownames(feature_imp_s_rf[1:200, ]) # 200 features - use in stacking.R
+
+# new dmatrix with only features from imp_f_rf
+train_d_rf <- xgb.DMatrix(data = data.matrix(sampled_train[, c(which(colnames(sampled_train) %in% imp_f_rf &
+                                                                       colnames(sampled_train) != "country_destination"))]),
+                          label = as.numeric(sampled_train$country_destination) - 1)
+# fit new xgb
+xgb_rf <- xgb.train(params = parameters, 
+                    data = train_d_rf,
+                    nrounds = n_round)
+
+test_xgb_rf <- xgb.DMatrix(data = data.matrix(test[, c(which(colnames(test) %in% imp_f_rf &
+                                                               colnames(test) != "country_destination"))]),
+                           label = as.numeric(test$country_destination) - 1)
+
+preds_xgb_rf <- predict(xgb_rf, newdata = test_xgb_rf)
+
+# convert predictions to df 
+sampled_xgb_rf_df <- as.data.frame(matrix(preds_xgb_rf, 
+                                          nrow = length(preds_xgb_rf) / 12, 
+                                          ncol = 12, 
+                                          byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
+                                                                    max_prob = max.col(., "last"))
+
+sum(sampled_xgb_rf_df$max_prob == sampled_xgb_rf_df$label) / nrow(sampled_xgb_rf_df)
+
+ndcg5(preds_xgb_rf, test_xgb_rf) # 0.918 (same as with full feature set) 
+
+feature_imp_xgb_rf <- xgb.importance(feature_names = colnames(train_d_rf), # only 192 features 
+                                     model = xgb_rf)
+xgb.plot.importance(feature_imp_xgb_rf[1:20, ])
+
 
 
 # =================================================================================================================
