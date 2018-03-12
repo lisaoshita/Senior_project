@@ -98,4 +98,10 @@ knitr::opts_chunk$set(echo = TRUE)
 * refit random forest to new sampled data- achieved same accuracy, but now it's predicting all countries 
 * re-tried stacked model with the new sampled data, achieved same accuracy, but predicting all countries 
 * implemented Normalized discounted cumulative gain score, the metric used in the competition - achieved 0.92 (???)
+* round error in sampled data, refit models to fixed data 
+    + random forest achieved 90% 
+    + xgboost achieved same accuracy as before (87%) 
+    + refit xgboost to features found to be important with random forest, achieved same accuracy (87%)  
+* retry stacking with sampled data + fit random forest and xgb to only the features found to be important prior, achieved 92% accuracy 
+    + NDCG5 - .96 (???)
 
