@@ -34,13 +34,11 @@ test_matrix <- xgb.DMatrix(data = data.matrix(test[, -1]),
 n_classes <- length(unique(train$country_destination))
 
 parameters <- list("objective" = "multi:softprob",
-                   "num_class" = n_classes,
+                   "num_class" = 12,
                    eta = 0.3, 
-                   gamma = 0, 
                    max_depth = 6, 
                    min_child_weight = 1, 
-                   subsample = 0.8, 
-                   colsample_bytree = 0.9)
+                   subsample = 0.8)
 n_round <- 10
 cv_fold <- 5
 
