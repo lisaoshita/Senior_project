@@ -61,6 +61,8 @@ smoted_train <- bind_rows(smote_list)
 smoted_train <- smoted_train[sample(nrow(smoted_train)), ]
 
 # ========================================================================================
+# fit random forest to SMOTEd data 
+# ========================================================================================
 
 smoted_train_rf <- smoted_train %>% select(imp_f_rf, class)
 smoted_train_rf$class <- as.factor(smoted_train_rf$class)
@@ -81,4 +83,56 @@ table(rf_preds, as.numeric(test$country_destination))
 sum(rf_preds == as.numeric(test$country_destination))/length(rf_preds) # 87% accuracy 
 
 table(rf_preds) # still only predicting a few of the countries 
+
+# ========================================================================================
+# fit XGB to SMOTEd data 
+# ========================================================================================
+
+smoted_train_d <- xgb.DMatrix(data = data.matrix(smoted_train %>% select(imp_f_xgb, -class)),
+                              label = as.numeric(smoted_train$class) - 1)
+
+parameters <- list("objective" = "multi:softprob",
+                   "num_class" = 12,
+                   eta = 0.3, 
+                   max_depth = 8, 
+                   min_child_weight = 1, 
+                   subsample = 0.8)
+n_round <- 10
+
+
+smoted_xgb <- xgb.train(params = parameters, 
+                 data = smoted_train_d, 
+                 nrounds = n_round)
+
+smoted_test_d <- xgb.DMatrix(data = data.matrix(test %>% select(imp_f_xgb)),
+                             label = as.numeric(test$country_destination) - 1)
+
+smoted_preds <- predict(smoted_xgb, newdata = smoted_test_d)
+
+smoted_preds_df <- as.data.frame(matrix(smoted_preds, 
+                                         nrow = length(smoted_preds) / 12, 
+                                         ncol = 12, 
+                                         byrow = TRUE)) %>% mutate(label = as.numeric(test$country_destination),
+                                                                   max_prob = max.col(., "last"))
+
+# confusion matrix
+table(smoted_preds_df$max_prob, smoted_preds_df$label) # only predicting 3,6,8,9,10,11,12 
+
+# accuracy 
+sum(smoted_preds_df$max_prob == smoted_preds_df$label) / nrow(smoted_preds_df) # 0.8752753
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
