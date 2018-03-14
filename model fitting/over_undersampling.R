@@ -23,49 +23,43 @@ set.seed(444)
 train_index <- caret::createDataPartition(y = train$country_destination, p = 0.70, list = FALSE)
 
 training <- train[train_index, ]
-test <- train[-train_index, ]
+test <- train[-train_index, ] # don't use this - hold out for stacking.R 
 
-
-# function to sample each country up or down to 10,000
-# sample_train <- function(country, replace) {
-#   
-#   dat <- training %>% filter(country_destination == country) %>% sample_n(size = 10000, replace = replace)
-#   
-#   return(dat)
-# 
-# }
-# 
-# countries <- as.character(unique(train$country_destination))
-# replace_vals <- c(FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
-# 
-# sampled_train <- purrr::map2_dfr(countries, replace_vals, ~sample_train(.x, .y)) # achieve 63% accuracy 
-
+# set up training and test sets
+training_s_index <- caret::createDataPartition(y = training$country_destination, p = 0.70, list = FALSE)
+training_s <- training[training_s_index, ]
+test_s <- training[-training_s_index, ]
 
 # =================================================================================================================
 
 sampled_list <- list()
 
 # oversampling
-sampled_list[[1]] <- training %>% filter(country_destination == "AU") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[2]] <- training %>% filter(country_destination == "CA") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[3]] <- training %>% filter(country_destination == "DE") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[4]] <- training %>% filter(country_destination == "NL") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[5]] <- training %>% filter(country_destination == "PT") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[6]] <- training %>% filter(country_destination == "ES") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[7]] <- training %>% filter(country_destination == "GB") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[8]] <- training %>% filter(country_destination == "IT") %>% sample_n(size = 3000, replace = TRUE)
+sampled_list[[1]] <- training_s %>% filter(country_destination == "AU") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[2]] <- training_s %>% filter(country_destination == "CA") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[3]] <- training_s %>% filter(country_destination == "DE") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[4]] <- training_s %>% filter(country_destination == "NL") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[5]] <- training_s %>% filter(country_destination == "PT") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[6]] <- training_s %>% filter(country_destination == "ES") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[7]] <- training_s %>% filter(country_destination == "GB") %>% sample_n(size = 2500, replace = TRUE)
+sampled_list[[8]] <- training_s %>% filter(country_destination == "IT") %>% sample_n(size = 2500, replace = TRUE)
 
 # undersampling
-sampled_list[[9]] <- training %>% filter(country_destination == "NDF") %>% sample_n(size = 35000, replace = TRUE)
-sampled_list[[10]] <- training %>% filter(country_destination == "US") %>% sample_n(size = 20000, replace = TRUE)
+sampled_list[[9]] <- training_s %>% filter(country_destination == "NDF") %>% sample_n(size = 25000, replace = TRUE)
+sampled_list[[10]] <- training_s %>% filter(country_destination == "US") %>% sample_n(size = 15000, replace = TRUE)
 
 # none
-sampled_list[[11]] <- training %>% filter(country_destination == "FR") #%>% sample_n(size = 10000, replace = TRUE)
-sampled_list[[12]] <- training %>% filter(country_destination == "other")
+sampled_list[[11]] <- training_s %>% filter(country_destination == "FR") #%>% sample_n(size = 10000, replace = TRUE)
+sampled_list[[12]] <- training_s %>% filter(country_destination == "other")
 
 sampled_train <- bind_rows(sampled_list)
+
+# converting NAs in sampled_train and test to -1 (xgb can't handle NAs)
 sampled_train[ ,colnames(sampled_train)[colSums(is.na(sampled_train)) > 0]] <- -1
 test[ ,colnames(test)[colSums(is.na(test)) > 0]] <- -1
+
+# shuffling order of sampled_data
+sampled_train <- sampled_train[sample(nrow(sampled_train)), ] 
 
 
 # =================================================================================================================
@@ -92,34 +86,32 @@ xgb_sampled <- xgb.train(params = parameters,
                          nrounds = n_round)
 
 # convert test to Dmatrix
-test_s_d <- xgb.DMatrix(data = data.matrix(test[, -1]),
-                        label = as.numeric(test$country_destination) - 1)
+test_s_d <- xgb.DMatrix(data = data.matrix(test_s[, -1]),
+                        label = as.numeric(test_s$country_destination) - 1)
 
 # predict 
 sampled_preds_xgb <- predict(xgb_sampled, newdata = test_s_d)
 
 # convert predictions to df 
-sampled_predsdf_xgb <- as.data.frame(matrix(sampled_preds, 
-                                        nrow = length(sampled_preds) / 12, 
+sampled_predsdf_xgb <- as.data.frame(matrix(sampled_preds_xgb, 
+                                        nrow = length(sampled_preds_xgb) / 12, 
                                         ncol = 12, 
-                                        byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
+                                        byrow = TRUE)) %>% mutate(label = getinfo(test_s_d, "label") + 1,
                                                                   max_prob = max.col(., "last"))
 
 # accuracy 
-sum(sampled_predsdf$max_prob == sampled_predsdf$label) / nrow(sampled_predsdf) 
+sum(sampled_predsdf_xgb$max_prob == sampled_predsdf_xgb$label) / nrow(sampled_predsdf_xgb) # 0.87
 
 # confusion matrix 
-table(sampled_predsdf$max_prob, sampled_predsdf$label) # predicting country 8 perfectly 
+table(sampled_predsdf_xgb$max_prob, sampled_predsdf_xgb$label) # predicting country 8 perfectly 
 
 # feature importance
-feature_imp_s_xgb <- xgb.importance(feature_names = colnames(sampled_train_d), # only 192 features 
+feature_imp_s_xgb <- xgb.importance(feature_names = colnames(sampled_train_d), # 260 features 
                                     model = xgb_sampled)
 xgb.plot.importance(feature_imp_s_xgb[1:20])
 
-imp_f_xgb <- feature_imp_s_xgb$Feature # 192 features - use in stacking.R
-
 # ncdg5 metric 
-ndcg5(sampled_preds, test_s_d) # 0.918
+ndcg5(sampled_preds_xgb, test_s_d) # 0.916
 
 # =================================================================================================================
 # fit random forest to sampled data 
@@ -133,48 +125,54 @@ rf_model_s <- randomForest(country_destination ~ .,
 
 rf_model_s # 88.1% accuracy
 
-rf_pred_s <- predict(rf_model_s, newdata = test)
-table(rf_pred_s, test$country_destination)
-sum(rf_pred_s == test$country_destination) / length(rf_pred_s) # 90% accuracy 
+rf_pred_s <- predict(rf_model_s, newdata = test_s[,-1])
+table(rf_pred_s, test_s$country_destination)
+sum(rf_pred_s == test_s$country_destination) / length(rf_pred_s) # 0.8716925
 
 feature_imp_s_rf <- rf_model_s$importance
 feature_imp_s_rf <- feature_imp_s_rf[order(-feature_imp_s_rf[, ncol(feature_imp_s_rf)]), ] # decreasing order
+
+# =================================================================================================================
+# saving features to use in stacking.R
+# =================================================================================================================
+
+imp_f_rf <- rownames(feature_imp_s_rf[1:200, ]) 
+imp_f_xgb <- feature_imp_s_xgb$Feature[1:200] 
 
 
 # =================================================================================================================
 # fitting xgboost to features found to be important with random forest 
 
-imp_f_rf <- rownames(feature_imp_s_rf[1:200, ]) # 200 features - use in stacking.R
 
 # new dmatrix with only features from imp_f_rf
-train_d_rf <- xgb.DMatrix(data = data.matrix(sampled_train[, c(which(colnames(sampled_train) %in% imp_f_rf &
-                                                                       colnames(sampled_train) != "country_destination"))]),
-                          label = as.numeric(sampled_train$country_destination) - 1)
-# fit new xgb
-xgb_rf <- xgb.train(params = parameters, 
-                    data = train_d_rf,
-                    nrounds = n_round)
-
-test_xgb_rf <- xgb.DMatrix(data = data.matrix(test[, c(which(colnames(test) %in% imp_f_rf &
-                                                               colnames(test) != "country_destination"))]),
-                           label = as.numeric(test$country_destination) - 1)
-
-preds_xgb_rf <- predict(xgb_rf, newdata = test_xgb_rf)
-
-# convert predictions to df 
-sampled_xgb_rf_df <- as.data.frame(matrix(preds_xgb_rf, 
-                                          nrow = length(preds_xgb_rf) / 12, 
-                                          ncol = 12, 
-                                          byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
-                                                                    max_prob = max.col(., "last"))
-
-sum(sampled_xgb_rf_df$max_prob == sampled_xgb_rf_df$label) / nrow(sampled_xgb_rf_df)
-
-ndcg5(preds_xgb_rf, test_xgb_rf) # 0.918 (same as with full feature set) 
-
-feature_imp_xgb_rf <- xgb.importance(feature_names = colnames(train_d_rf), # only 192 features 
-                                     model = xgb_rf)
-xgb.plot.importance(feature_imp_xgb_rf[1:20, ])
+# train_d_rf <- xgb.DMatrix(data = data.matrix(sampled_train[, c(which(colnames(sampled_train) %in% imp_f_rf &
+#                                                                        colnames(sampled_train) != "country_destination"))]),
+#                           label = as.numeric(sampled_train$country_destination) - 1)
+# # fit new xgb
+# xgb_rf <- xgb.train(params = parameters, 
+#                     data = train_d_rf,
+#                     nrounds = n_round)
+# 
+# test_xgb_rf <- xgb.DMatrix(data = data.matrix(test[, c(which(colnames(test) %in% imp_f_rf &
+#                                                                colnames(test) != "country_destination"))]),
+#                            label = as.numeric(test$country_destination) - 1)
+# 
+# preds_xgb_rf <- predict(xgb_rf, newdata = test_xgb_rf)
+# 
+# # convert predictions to df 
+# sampled_xgb_rf_df <- as.data.frame(matrix(preds_xgb_rf, 
+#                                           nrow = length(preds_xgb_rf) / 12, 
+#                                           ncol = 12, 
+#                                           byrow = TRUE)) %>% mutate(label = as.numeric(test[,1]),
+#                                                                     max_prob = max.col(., "last"))
+# 
+# sum(sampled_xgb_rf_df$max_prob == sampled_xgb_rf_df$label) / nrow(sampled_xgb_rf_df)
+# 
+# ndcg5(preds_xgb_rf, test_xgb_rf) # 0.918 (same as with full set of features) 
+# 
+# feature_imp_xgb_rf <- xgb.importance(feature_names = colnames(train_d_rf), # only 192 features 
+#                                      model = xgb_rf)
+# xgb.plot.importance(feature_imp_xgb_rf[1:20, ])
 
 
 
