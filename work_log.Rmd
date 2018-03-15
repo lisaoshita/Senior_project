@@ -104,4 +104,11 @@ knitr::opts_chunk$set(echo = TRUE)
     + refit xgboost to features found to be important with random forest, achieved same accuracy (87%)  
 * retry stacking with sampled data + fit random forest and xgb to only the features found to be important prior, achieved 92% accuracy 
     + NDCG5 - .96 (???)
+* implement SMOTE to over sample from under-represented countries
+    + under sampled from over-represented countries
+    + applied random forest to new data - achieved 87%, not predicting all countries 
+    + applied xgb - achievd 87%, not predicting all countries 
+    + applied stacked model - achieved 
+* tried running the stacked model with other important features (firstbook, age_clean)
+    + achieved same accuracy + NDCG score 
 
