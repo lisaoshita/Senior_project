@@ -62,24 +62,32 @@ sampled_list <- list()
 # sampled_list[[12]] <- training %>% filter(country_destination == "other")
 
 
-sampled_list[[1]] <- training %>% filter(country_destination == "AU") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[2]] <- training %>% filter(country_destination == "CA") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[3]] <- training %>% filter(country_destination == "DE") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[4]] <- training %>% filter(country_destination == "NL") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[5]] <- training %>% filter(country_destination == "PT") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[6]] <- training %>% filter(country_destination == "ES") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[7]] <- training %>% filter(country_destination == "GB") %>% sample_n(size = 3000, replace = TRUE)
-sampled_list[[8]] <- training %>% filter(country_destination == "IT") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[1]] <- training %>% filter(country_destination == "AU") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[2]] <- training %>% filter(country_destination == "CA") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[3]] <- training %>% filter(country_destination == "DE") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[4]] <- training %>% filter(country_destination == "NL") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[5]] <- training %>% filter(country_destination == "PT") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[6]] <- training %>% filter(country_destination == "ES") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[7]] <- training %>% filter(country_destination == "GB") %>% sample_n(size = 3000, replace = TRUE)
+# sampled_list[[8]] <- training %>% filter(country_destination == "IT") %>% sample_n(size = 3000, replace = TRUE)
+# 
+# # undersampling
+# sampled_list[[9]] <- training %>% filter(country_destination == "NDF") %>% sample_n(size = 35000, replace = TRUE)
+# sampled_list[[10]] <- training %>% filter(country_destination == "US") %>% sample_n(size = 20000, replace = TRUE)
+# 
+# # none
+# sampled_list[[11]] <- training %>% filter(country_destination == "FR") #%>% sample_n(size = 10000, replace = TRUE)
+# sampled_list[[12]] <- training %>% filter(country_destination == "other")
+# 
+# train_meta <- bind_rows(sampled_list)
 
-# undersampling
-sampled_list[[9]] <- training %>% filter(country_destination == "NDF") %>% sample_n(size = 35000, replace = TRUE)
-sampled_list[[10]] <- training %>% filter(country_destination == "US") %>% sample_n(size = 20000, replace = TRUE)
 
-# none
-sampled_list[[11]] <- training %>% filter(country_destination == "FR") #%>% sample_n(size = 10000, replace = TRUE)
-sampled_list[[12]] <- training %>% filter(country_destination == "other")
+# stacking with SMOTE data (smoted_train)
+train_meta <- smoted_train
+train_meta$class <- as.factor(train_meta$class)
+colnames(train_meta)[which(colnames(train_meta) == "class")] <- "country_destination"
+train_meta <- mutate_if(train_meta, is.integer, as.numeric)
 
-train_meta <- bind_rows(sampled_list)
 
 # converting NA to -1 (xgb can't work with NA)
 train_meta[ ,colnames(train_meta)[colSums(is.na(train_meta)) > 0]] <- -1
@@ -108,7 +116,7 @@ test_meta <- cbind(test, M1 = 0, M2 = 0) # test from over_undersampling.R
 parameters <- list("objective" = "multi:softprob",
                    "num_class" = 12,
                    eta = 0.3, 
-                   max_depth = 6, 
+                   max_depth = 8, 
                    min_child_weight = 1, 
                    subsample = 0.8)
 n_round <- 10
@@ -121,19 +129,15 @@ cv_xgboost <- function(train1, train2, train3, train4, test) {
   train <- train_meta[which(train_meta$fold == train1 |
                               train_meta$fold == train2 |
                               train_meta$fold == train3 | 
-                              train_meta$fold == train4), 
-                      c(1, which(colnames(train) %in% imp_f_xgb &
-                              colnames(train) != rebus::or("M1", "M2", "fold")))]
+                              train_meta$fold == train4), ] %>% select(imp_f_xgb, country_destination)
   
-  test <- train_meta[which(train_meta$fold == test), 
-                     c(1, which(colnames(train) %in% imp_f_xgb &
-                                  colnames(train) != rebus::or("M1", "M2", "fold")))]
+  test <- train_meta[which(train_meta$fold == test), ] %>% select(imp_f_xgb, country_destination)
   
   # convert train and test to Dmatrices
-  train_m <- xgb.DMatrix(data = data.matrix(train[, -which(colnames(train) == "country_destination")]), 
+  train_m <- xgb.DMatrix(data = data.matrix(train %>% select(-country_destination)), 
                          label = as.numeric(train$country_destination) - 1)
   
-  test_m <- xgb.DMatrix(data = data.matrix(test[, -which(colnames(test) == "country_destination")]),
+  test_m <- xgb.DMatrix(data = data.matrix(test %>% select(-country_destination)),
                         label = as.numeric(test$country_destination) - 1)
   
   # fit xgboost 
@@ -175,11 +179,9 @@ cv_rf <- function(train1, train2, train3, train4, test) {
   train <- train_meta[which(train_meta$fold == train1 |
                               train_meta$fold == train2 |
                               train_meta$fold == train3 | 
-                              train_meta$fold == train4), 
-                      c(1, which(colnames(train_meta) %in% imp_f_rf & colnames(train_meta) != rebus::or("M1", "M2", "fold")))]
+                              train_meta$fold == train4), ] %>% select(imp_f_rf, country_destination)
   
-  test <- train_meta[which(train_meta$fold == test), 
-                     c(1, which(colnames(train_meta) %in% imp_f_rf & colnames(train_meta) != rebus::or("M1", "M2", "fold")))]
+  test <- train_meta[which(train_meta$fold == test), ] %>% select(imp_f_rf, country_destination)
   
   # fit model 
   rf_model <- randomForest(country_destination ~ ., 
@@ -201,7 +203,7 @@ train_meta$M2[train_meta$fold == 2] <- cv_rf(train1 = 3, train2 = 4, train3 = 5,
 train_meta$M2[train_meta$fold == 3] <- cv_rf(train1 = 4, train2 = 5, train3 = 1, train4 = 2, test = 3)
 train_meta$M2[train_meta$fold == 4] <- cv_rf(train1 = 5, train2 = 1, train3 = 2, train4 = 3, test = 4)
 train_meta$M2[train_meta$fold == 5] <- cv_rf(train1 = 1, train2 = 2, train3 = 3, train4 = 4, test = 5)
-
+beepr::beep()
 
 # train_meta$M2 <- train_meta$M2 - 1 # 84% accuracy 
 
@@ -214,17 +216,16 @@ train_meta$M2[train_meta$fold == 5] <- cv_rf(train1 = 1, train2 = 2, train3 = 3,
 
 # xgboost
 
-train_xgb <- train_meta[ , which(colnames(train_meta) %in% imp_f_xgb &
-                          colnames(train_meta) != rebus::or("M1", "M2", "country_destination"))]
-test_xgb <- test_meta[ , which(colnames(test_meta) %in% imp_f_xgb & 
-                                colnames(test_meta) != rebus::or("M1", "M2", "country_destination"))]
+train_xgb <- train_meta %>% select(imp_f_xgb, country_destination)
+                                   
+test_xgb <- test_meta %>% select(imp_f_xgb, country_destination)
 
 # set up training + test
-full_train <- xgb.DMatrix(data = data.matrix(train_xgb), 
-                          label = as.numeric(train_meta$country_destination) - 1)
+full_train <- xgb.DMatrix(data = data.matrix(train_xgb %>% select(-country_destination)), 
+                          label = as.numeric(train_xgb$country_destination) - 1)
 
-full_test <- xgb.DMatrix(data = data.matrix(test_xgb), 
-                         label = as.numeric(test_meta$country_destination) - 1)
+full_test <- xgb.DMatrix(data = data.matrix(test_xgb %>% select(-country_destination)), 
+                         label = as.numeric(test_xgb$country_destination) - 1)
 
 # fit model 
 xgb_full <- xgb.train(params = parameters, 
@@ -252,8 +253,7 @@ test_meta$M1 <- preds_df$max_prob
 
 # random forest 
 
-train_meta_rf <- train_meta[, c(1, which(colnames(train_meta) %in% imp_f_rf & 
-                                          colnames(train_meta) != rebus::or("M1", "M2", "fold")))]
+train_meta_rf <- train_meta %>% select(imp_f_rf, country_destination)
 
 rf_full <- randomForest(country_destination ~ ., 
                         data = train_meta_rf, 
@@ -264,8 +264,7 @@ beepr::beep()
 
 
 # predictions (this achieves 98%??)
-test_meta_rf <- test_meta[, c(which(colnames(test_meta) %in% imp_f_rf & 
-                                      colnames(test_meta) != rebus::or("country_destination", "M1", "M2")))]
+test_meta_rf <- test_meta %>% select(imp_f_rf, country_destination)
 
 test_meta$M2 <- predict(rf_full, newdata = test_meta_rf) # 0.86
 
@@ -280,11 +279,11 @@ test_meta$M2 <- as.numeric(test_meta$M2) - 1
 
 
 # set up training data 
-stacked_train <- xgb.DMatrix(data = data.matrix(train_meta[ , c("M1", "M2")]), 
+stacked_train <- xgb.DMatrix(data = data.matrix(train_meta %>% select(M1, M2, age_clean, starts_with("firstbook"))), 
                              label = as.numeric(train_meta$country_destination) - 1)
 
 # set up test
-stacked_test <- xgb.DMatrix(data = data.matrix(test_meta[, c("M1", "M2")]),
+stacked_test <- xgb.DMatrix(data = data.matrix(test_meta %>% select(M1, M2, age_clean, starts_with("firstbook"))),
                             label = as.numeric(test_meta$country_destination) - 1)
 
 # fit xgboost 
