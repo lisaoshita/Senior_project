@@ -9,6 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+```
+
+
 #### Variables: 
 
 * id: user id
@@ -75,7 +82,7 @@ train_users$acct_created_sn[as.numeric(train_users$acct_created_m) == 12 |
 
 train_users %>% 
   group_by(acct_created_sn) %>%
-  summarise(n = n(), propBook = sum(book == 1)/n)
+  summarise(n = n(), propBook = sum(is.na(firstbook_y))/n)
 # even rate of people booking across seasons 
 ```
 
@@ -180,8 +187,9 @@ ggplot(firstbookDF, aes(x = date, y = count.Freq)) +
 # age 
 # ===========================================================================
 # histogram of ages (up to 100)
-ggplot(train_users, aes(x = age)) + 
-  geom_histogram() + 
+age_df <- train_users %>% select(country_destination, age_clean) %>% filter(age_clean > 0)
+ggplot(data = age_df, aes(x = age_clean)) + 
+  geom_histogram(bins = 30) + 
   scale_x_continuous(limits = c(0, 100))
 # ===========================================================================
 # max age = 2014 (quite a few outliers)
@@ -192,7 +200,7 @@ ggplot(train_users, aes(x = age)) +
 quantile(train_users$age, na.rm = TRUE)
 # ===========================================================================
 # boxplots of age for each country 
-ggplot(train_users, aes(x = country_destination, y = age)) + 
+ggplot(data = age_df, aes(x = country_destination, y = age_clean)) + 
   geom_boxplot() + 
   scale_y_continuous(limit = c(0, 60))
 
