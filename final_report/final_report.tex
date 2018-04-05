@@ -46,6 +46,11 @@ its base models---as it\textquotesingle s able to correct and build upon the per
 
 \section{Exploratory Analysis}
 
+imbalanced classes
+ages
+gender
+number of missing values 
+
 \section{Feature Engineering}
 
 From the train\_users data I created a total of ? features. I pulled apart the month, year and day of 
@@ -92,7 +97,88 @@ algorithms. Essentially, a boolean column indicating a 1 or 0 was generated for 
 Continuous features were left as is. After one-hot encoding and feature engineering, there were a total of 596
 features to use in the models. 
 
-\section{Model Building}
+\section{Model Building and Results}
+
+The processes used for building the three models (XGBoost, random forest, and stacked models) was not linear.
+It was an iterative process in that, when new findings were discovered or new features were added in, I went back 
+a few steps to make changes. But overall, the same process was used for all three models. 
+
+The full data was partitioned into one training set, containing 70\% of the full data (149,422 rows), and one 
+test set containing 64,029 rows. All model building was performed on just the training set. For both the XGBoost 
+and random forest models, five fold cross-validation was performed on the training set, including all 596 features. 
+Both models achieved 87\% classification accuracy in this process, as well as a Normalized Discounted cumulative
+gain score of 0.92. However, both models only made predictions for a few out of the 12 possible countries. Predictions
+made included just the US, Other, and no destination found. Examining feature importance for each model showed that not 
+all features were contributing to the predictions. So, the top 200 most important features for each model were extracted. 
+The models were then refit again to the same data, but only with those top 200 features, and five fold cross-validation 
+was again performed. Accuracy and NDCG scores remained the same, but computational time was much faster. These 
+top 200 features were the only features considered from this point forward. 
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{| l | l | l |}
+  \hline
+  \textbf{Country} & \textbf{N} & \textbf{Proportion} \\ 
+  \hline
+  AU & 5670 & 0.05 \\ 
+  CA & 5000 & 0.04 \\ 
+  DE & 5944 & 0.05 \\ 
+  ES & 6300 & 0.05 \\ 
+  FR & 7034 & 0.06 \\ 
+  GB & 6508 & 0.06 \\ 
+  IT & 5955 & 0.05 \\ 
+  NDF & 35000 & 0.30 \\ 
+  NL & 5340 & 0.05 \\ 
+  other & 7066 & 0.06 \\ 
+  PT & 5320 & 0.05 \\ 
+  US & 20000 & 0.17 \\ 
+   \hline
+\end{tabular}
+\label{table:smote}
+\end{table}
+
+To account for the highly imbalanced classes, various techniques were explored---regular oversampling with 
+replacement combined with undersampling from the overrepresented classes, before settling on 
+synthetic minority oversampling techniques (SMOTE). With SMOTE, underrepresented classes are upsampled by
+generating synthetic examples by selecting neighbors from the k-nearest neighbors of the minority classes. This was
+combined with an undersampling of the majority class. The resulting training set contained 115,137 observations. 
+Table \ref{table:smote} shows the number of observations and proportion for each country after SMOTE and 
+undersampling was performed. 
+
+The same model fitting process (cross-validation with only the top 200 features) was again performed 
+on this new training data. For both models, accuracy and NDCG scores remained the same. However, with 
+this new training data, the models were now able to make predictions for all countries instead of just a few. 
+Although the predictions for these minority countries were not significantly accurate. Tables blah and blah 
+show the confusion matrices for the XGBoost and random forest fit to this new training data. 
+
+After individually exploring the random forest and XGBoost models, they were combined into one 
+stacked model according to this guideline. 
+
+\section{Discussion and Conclusion}
+
+
+\section{References}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
