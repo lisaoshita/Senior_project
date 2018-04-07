@@ -10,6 +10,7 @@
 
 \maketitle
 
+% -----------------------------------------------------------------------------------------------
 \section{About the Competition}
 
 
@@ -17,13 +18,13 @@ Founded in 2008, Airbnb is an online accommodation marketplace featuring million
 rooms and apartments for rent or lease in over 200 countries. As part of a recruiting competition,
 Airbnb partnered with Kaggle to host a data science competition starting in November 2015 and ending
 in February 2016. The task of this competition was to build a model to accurately predict where new
-Airbnb users will make their first bookings. There are a total of 12 possible destinations to predict:
-US, France, Canada, United Kingdom, Spain, Italy, Portugal, Netherlands, Germany, Australia, Other and
-no destination found. No destination found indicates that the user did not make a booking, while Other
-indicates that a booking was made to a country not already listed. For this competition, Airbnb provided
-six data sets for participants to use in model building. I used two of these data sets: train\_users,
-which contains information about the users, including where they first booked, and sessions, which contains
-information about user\textquotesingle s web session activity.
+Airbnb users will make their first bookings. Participants were given access to six data sets containing
+information about the users and the 12 possible destinations to predict: US, France, Canada, United Kingdom, 
+Spain, Italy, Portugal, Netherlands, Germany, Australia, Other and No Destination Found (NDF). No destination 
+found indicates that a user did not make a booking. Other indicates that a booking was made to a 
+country not already listed. 
+
+% -----------------------------------------------------------------------------------------------
 
 \section{XGBoost, Random Forest, Stacked Models}
 
@@ -43,12 +44,64 @@ explore a general form of this. Stacking, also called meta ensembling, is a tech
 information from individual predictive models to create a new model. Stacked models usually outperform 
 its base models---as it\textquotesingle s able to correct and build upon the performance of those base models. 
 
-\section{Exploratory Analysis}
+% -----------------------------------------------------------------------------------------------
 
-imbalanced classes
-ages
-gender
-number of missing values 
+\section{Exploratory Analysis and Feature Engineering}
+
+Of the six available data sets, I focused on two: train\_users, which contains user information starting
+in 2010, and sessions, which contains information about user\textquotesingle s web session activities. 
+
+The sessions data contained 1,048,575 rows and 12,994 unique users. To minimize computation time when working 
+with this data, 10\% of the rows from each unique user was randomly sampled. This new sampled data, containing 104,424 
+rows, was used for all following analyses and model building. Figure blah shows the first six rows of the
+sampled sessions data. 
+% include head of train_users and sessions 
+
+The train\_users data contained 213,415 rows and 16 original columns. Figure blah shows the first six rows 
+of this data. Exploratory analysis of this data revealed several factors. 
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{| l |l |}
+  \hline
+ & \textbf{Destination} & \textbf{Percentage of Bookings} \\ 
+  \hline
+  NDF & 58.35\% \\ 
+  US & 29.22\% \\ 
+  other & 4.73\% \\ 
+  FR & 2.35\% \\ 
+  IT & 1.33\% \\ 
+  GB & 1.09\% \\ 
+  ES & 1.05\% \\ 
+  CA & 0.67\% \\ 
+  DE & 0.50\% \\ 
+  NL & 0.36\% \\ 
+  AU & 0.25\% \\ 
+  PT & 0.10\% \\ 
+   \hline
+\end{tabular}
+\caption{Percentage of Bookings Made to Each Destination}
+\label{table:countries}
+\end{table}
+
+Table \ref{table:countries} highlights how imbalanced the target destinations are. NDF and US
+account for almost 90\% of the entire data, indicating that a majority of users either 
+have yet to make a booking, or book locations in the US. The remaining nine, under-represented 
+destinations make up less than 5\% of the data each. 
+
+
+
+
+
+% include histogram of ages 
+% include figure for genders 
+
+Figure blah depicts the distribution of user's ages, after the age feature had been cleaned and 
+missing values were handled with. The median age of all users was 36 years old. 
+
+% -----------------------------------------------------------------------------------------------
+
+
 
 \section{Feature Engineering}
 
@@ -58,12 +111,10 @@ a season variable (winter, spring, summer, fall). I also calculated the differen
 date feature:  days between the date an account was created and the date of first booking, and days 
 between date first active and date of first booking. I also cleaned the age and gender features. 
 
-From the sessions data I created a total of blah features. The data contained five features describing 
-user’s web session activity: action (193 levels), action\_type (9 levels), action\_detail (93 levels), 
-device\_type (13 levels), and secs\_elapsed. I aggregated the data by each user and created features 
-counting the number of unique levels for each of these features. From secs\_elapsed, I also calculated 
-summary statistics like the mean and median for each unique user. These features were then joined by 
-user id to the training data. 
+From the sessions data I created a total of blah features. I aggregated the data by each user and 
+created features counting the number of unique levels for each of these features. From secs\_elapsed, 
+I also calculated summary statistics like the mean and median for each unique user. These features 
+were then joined by user id to the training data. 
 
 The following is a list of all features included in the training data: 
 
@@ -101,6 +152,8 @@ features to use in the models.
 The processes used for building the three models (XGBoost, random forest, and stacked models) was not linear.
 It was an iterative process in that, when new findings were discovered or new features were added in, I went back 
 a few steps to make changes. But overall, the same process was used for all three models. 
+
+% maybe include a visual explaining the flow of this stacked model 
 
 The full data was partitioned into one training set, containing 70\% of the full data (149,422 rows), and one 
 test set containing 64,029 rows. All model building was performed on just the training set. For both the XGBoost 
@@ -148,12 +201,44 @@ The same model fitting process (cross-validation with only the top 200 features)
 on this new training data. For both models, accuracy and NDCG scores remained the same. However, with 
 this new training data, the models were now able to make predictions for all countries instead of just a few. 
 Although the predictions for these minority countries were not significantly accurate. Tables blah and blah 
-show the confusion matrices for the XGBoost and random forest fit to this new training data. 
+show the confusion matrices for the XGBoost and random forest fit to this new training data. Figures blah 
+and blah show the feature importance for each model. 
 
 After individually exploring the random forest and XGBoost models, they were combined into one 
-stacked model according to this guideline. 
+stacked model according to this guideline. The training data was partitiioned into five folds of around the 
+same size. Each model was built on the training folds, and tested on the held out test fold. For example, 
+the XGBoost was built on folds one, two, three and four, and used to make predictions on fold five. In the 
+second iteration, the XGBoost was build on folds two, three, four and five, and used to make predictions on
+fold one. This process was repeated for both models, until each fold had been used as a test fold. Predictions 
+from these models were stored as columns in the training data. Then, each model was fit to the full training data
+(ignoring the folds and predictions created in the previous step), and used to predict on the held out test set. 
+Predictions from these models were stored in two columns in that test set. A final XGBoost was used as the model 
+to combine, or stack the information from the previous processes. The XGBoost was fit to the predictions stored
+in the training set, and tested on the predictions stored in the test set. Resulting accuracy and NDCG score 
+for this stacked model was the same as all previous models. 
 
 \section{Discussion and Conclusion}
+
+Various strategies were explored in an attempt to improve the performance of these models. However, 
+every method explored made no difference in the model's accuracy. One of the biggest reasons these model's 
+hovered at 87\% is the highly imbalanced classes. Three destinations---no destination found, other, and US---make 
+up over half of the data. The remaining eight, underrepresented countries each make up less than 5\% of the data. 
+Essentially, there is not enough information and data for the models to be able to differentiate 
+and make predictions for those underrepresented countries. However, because those three countries make up 
+such a substantial part of the data, the accuracy for each model remained fairly high. In order to create a model
+that can make accurate predictions for all of the twelve possible countries, a method for handling these
+highly imbalanced classes would need to be implemented. 
+
+Possibilities for future work on this, one might consider to combine more models of different varieties. 
+The second place winner of this Airbnb competition built numerous models that did not just predict destination, 
+but other models that also predicted missing values of certain features. Those features were then used in 
+predictions for more models. Overall, it appears that the top three participants were combined multiple 
+models in several layers. One might consider doing this, and expanding or adding on to the stacked model
+I implemented. One reason this stacked model did not result in a better performance than the two base models, 
+is that stacked models generally work well if the two base models perform in different ways (e.g. if one
+model predicts one category accurately but not another, and the other model predicts the category that the 
+other model is weak with, accuratley, but not the other way around). In my case, both models could not 
+make accurate predicitons for the underrepresented countries, thus, the stacked model also could not. 
 
 
 \section{References}
