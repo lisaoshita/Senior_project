@@ -1,0 +1,101 @@
+---
+title: "Graphics for Final Report/Presentation"
+author: "Lisa Oshita"
+date: "4/6/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# pie graph of country_destinations
+
+df <- train_users %>% count(country_destination) %>% arrange(desc(n))
+df$percentage <- round((df$n / sum(df$n)) * 100, 2)
+
+library(ggrepel)
+ggplot(data = df, aes(x = "", y = n, fill = forcats::fct_inorder(country_destination))) + 
+  geom_bar(width = 1, stat = "identity") + 
+  coord_polar("y", start = 0) + 
+  scale_fill_discrete("Destinations") +
+  theme_void() + 
+  geom_label_repel(aes(label = percentage), size=5, show.legend = F, nudge_x = 1)
+  
+
+
+library(ggplot2)
+ggplot(data = train_users, aes(x = factor(1), fill = country_destination)) + 
+  geom_bar() + 
+  coord_polar("y", start = 0) + 
+  theme_void() + 
+  scale_fill_discrete(name = "Destination") + 
+  ggtitle("Pie Graph of Country Destinations") 
+
+
+  scale_fill_manual(name = "Destination", 
+                      labels = c("AU 0.25%", "CA 0.67%", "DE 0.50%", "ES 1.05%", "FR 2.35%",
+                             "GB 1.09%", "IT 1.33%", "NDF 58.35%", "other 4.73%", "PT 0.10%", "US 29.22%"), 
+                      values = c("grey", "green", "blue", "yellow", "orange", "purple", "black", 
+                                 "red", "brown", "tan", "pink", "magenta")) + 
+  ggtitle("Pie Graph of Country Destinations") 
+```
+
+
+
+```{r}
+# table with percentages of country_destinations
+xtable::xtable(df)
+```
+
+```{r}
+# histogram of user's ages 
+
+age_df <- train_users %>% select(country_destination, age_clean) %>% filter(age_clean > 0)
+ggplot(data = age_df, aes(x = age_clean)) + 
+  geom_histogram(bins = 20, alpha = 0.75) + 
+  scale_x_continuous(limits = c(0, 100)) + 
+  theme_minimal() + 
+  xlab("Age") + ylab("Count") + ggtitle("Histogram of User's Ages")
+
+ggsave(filename = "ages_histogram.pdf", plot = last_plot(), width = 8, height = 5)
+```
+
+```{r}
+# bar plot of ages 
+ggplot(data = )
+```
+
+
+```{r}
+gender <- train_users %>% 
+  group_by(country_destination, gender_clean) %>% 
+  summarise(n = n()) %>% 
+  mutate(p_female = sum(gender_clean == "FEMALE") / n,
+         p_male = sum(gender_clean == "MALE") / n, 
+         p_unknown = sum(gender_clean == "unknown") / n)
+gender
+
+ggplot(data = train_users, aes(x = country_destination)) + 
+  geom_bar()
+
+  ggplot(train_users, aes(x = train_users[[var]], fill = as.factor(book))) + 
+    geom_bar() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    ggtitle(var) + 
+    scale_x_discrete(var) 
+  
+genderdf <- train_users %>% select(country_destination, gender_clean)
+
+
+```
+
+
+
+
+
+
+
+
