@@ -151,7 +151,8 @@ train_users$firstbook_sn[as.numeric(train_users$firstbook_m) == 12 |
 
 # ===========================================================================
 # how long it took users to book (after creating account)
-train_users$time_until_book <- train_users$firstbook_date - train_users$acct_created_date
+time_until_book <- train_users$firstbook_date - train_users$acct_created_date
+
 
 # distribution of time until first booking 
 ggplot(train_users, aes(x = time_until_book)) + 
@@ -189,8 +190,12 @@ ggplot(firstbookDF, aes(x = date, y = count.Freq)) +
 # histogram of ages (up to 100)
 age_df <- train_users %>% select(country_destination, age_clean) %>% filter(age_clean > 0)
 ggplot(data = age_df, aes(x = age_clean)) + 
-  geom_histogram(bins = 30) + 
-  scale_x_continuous(limits = c(0, 100))
+  geom_histogram(bins = 20) + 
+  scale_x_continuous(limits = c(0, 100)) + 
+  theme_minimal() + 
+  xlab("Age") + ylab("Count") + ggtitle("Histogram of User's Ages")
+
+
 # ===========================================================================
 # max age = 2014 (quite a few outliers)
 # median age = 34
