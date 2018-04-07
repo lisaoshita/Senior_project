@@ -173,14 +173,19 @@ firstbookDate <- train_users %>% select(date_first_booking) %>% filter(date_firs
 firstbookDF <- data.frame(date = names(table(firstbookDate$date_first_booking)),
                           count = unname(table(firstbookDate$date_first_booking)))
 firstbookDF$date <- as.Date(firstbookDF$date, format="%Y-%m-%d")
+
 ggplot(firstbookDF, aes(x = date, y = count.Freq)) + 
   geom_point() + 
   geom_smooth() + 
   scale_x_date(date_breaks = "6 months") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ylab("Count") + xlab("Date") + 
+  ggtitle("Number of bookings made over time")
 # seasonal pattern?
 # spike in bookings between 3/2014 and 9/2014 (summer months?)
 # spike appears in september for every year 
+
+ggsave("bookingsovertime.pdf", )
 ```
 
 ```{r}
