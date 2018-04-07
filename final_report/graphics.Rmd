@@ -46,6 +46,25 @@ ggplot(data = genderdf, aes(x = forcats::fct_infreq(country_destination), fill =
 ggsave(filename = "gender_visual.pdf", plot = last_plot(), width = 8, height = 5)
 ```
 
+```{r}
+# time series plot of date first book 
+firstbookDate <- train_users %>% select(date_first_booking) %>% filter(date_first_booking != "")
+
+firstbookDF <- data.frame(date = names(table(firstbookDate$date_first_booking)),
+                          count = unname(table(firstbookDate$date_first_booking)))
+
+firstbookDF$date <- as.Date(firstbookDF$date, format="%Y-%m-%d")
+
+ggplot(firstbookDF, aes(x = date, y = count.Freq)) + 
+  geom_point() + 
+  geom_smooth() + 
+  scale_x_date(date_breaks = "6 months") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ylab("Count") + xlab("Date") + 
+  ggtitle("Number of bookings made over time")
+
+ggsave("bookingsovertime.pdf", plot = last_plot(), width = 8, height = 5)
+```
 
 
 
