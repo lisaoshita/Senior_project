@@ -1,6 +1,12 @@
 \documentclass{article}
 
-\usepackage{textcomp} % for apostrophe 
+\usepackage{textcomp} % for apostrophe
+
+% for tables
+\usepackage{multirow} 
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\usepackage{caption}
 
 \title{Airbnb's New User Bookings Kaggle Competition}
 \author{Lisa Oshita}
@@ -11,6 +17,7 @@
 
 \maketitle
 
+% -----------------------------------------------------------------------------------------------
 \section{About the Competition}
 
 
@@ -18,10 +25,13 @@ Founded in 2008, Airbnb is an online accommodation marketplace featuring million
 rooms and apartments for rent or lease in over 200 countries. As part of a recruiting competition,
 Airbnb partnered with Kaggle to host a data science competition starting in November 2015 and ending
 in February 2016. The task of this competition was to build a model to accurately predict where new
-Airbnb users will make their first bookings. There are a total of 12 possible destinations to predict:
-US, France, Canada, United Kingdom, Spain, Italy, Portugal, Netherlands, Germany, Australia, Other and
-no destination found. No destination found indicates that a user did not make a booking, while Other
-indicates that a booking was made to a country not already listed. 
+Airbnb users will make their first bookings. Participants were given access to six data sets containing
+information about the users and the 12 possible destinations to predict: US, France, Canada, United Kingdom, 
+Spain, Italy, Portugal, Netherlands, Germany, Australia, Other and No Destination Found (NDF). No destination 
+found indicates that a user did not make a booking. Other indicates that a booking was made to a 
+country not already listed. 
+
+% -----------------------------------------------------------------------------------------------
 
 \section{XGBoost, Random Forest, Stacked Models}
 
@@ -39,40 +49,33 @@ modeling that have performed well in Kaggle competitions.
 As the top three winners of this Airbnb competition used a form of stacked modeling, I also decided to 
 explore a general form of this. Stacking, also called meta ensembling, is a technique used to combine 
 information from individual predictive models to create a new model. Stacked models usually outperform 
-its base models---as it\textquotesingle s able to correct and build upon the performance of those base models. 
+its base models, as they are able to correct and build upon the performance of those base models. 
+
+% -----------------------------------------------------------------------------------------------
 
 \section{Exploratory Analysis}
 
-imbalanced classes
-ages
-gender
-number of missing values 
+Of the six available data sets, I focused on two: train\_users, which contains user information starting
+in 2010, and sessions, which contains information about user\textquotesingle s web session activities. 
 
-For this competition, Airbnb provided six data sets for participants to use in model building. 
-I used two of these data sets: train\_users, which contains information about the users dating back to
-2010, including where they first booked, and sessions, which contains information about 
-user\textquotesingle s web session activity. The train\_users data contained 213,415 rows and 16 
-original columns. The sessions data contained 1,048,575 rows and six original columns. To reduce 
-computation time when working with the sessions data, a function was written to sample 10\% of 
-the rows belonging to each unique user within the data. The sampled data came out to include 
-104,424 observations. All following anayliss and model building was done on this sampled sessions data. 
+The sessions data contained 1,048,575 rows and 12,994 unique users. To minimize computation time when working 
+with this data, 10\% of the rows from each unique user was randomly sampled. This new sampled data, containing 104,424 
+rows, was used for all following analyses and model building. Figure blah shows the first six rows of the
+sampled sessions data. 
+% include head of train_users and sessions 
 
-Table blah shows the first six rows of the sessions data. The data contained five features describing 
-each user's web session activity: action (193 levels), action\_type (9 levels), action\_detail
-(93 levels), device\_type (13 leels), and secs\_elapsed. There were 12,994 unique users within this data.
-A majority of the users within this sessions data were also in the train\_users data. 
-
-Exploring the train\_users data revealed several factors about the data. 
+The train\_users data contained 213,415 rows and 16 original columns. Figure blah shows the first six rows 
+of this data. Exploratory analysis of this data revealed several factors. 
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{l |l }
+\begin{tabular}{| l |l |}
   \hline
- & \textbf{Destination} & \textbf{Percentage of the data} \\ 
+  \textbf{Destination} & \textbf{Percentage of Bookings} \\ 
   \hline
   NDF & 58.35\% \\ 
   US & 29.22\% \\ 
-  other  & 4.73\% \\ 
+  other & 4.73\% \\ 
   FR & 2.35\% \\ 
   IT & 1.33\% \\ 
   GB & 1.09\% \\ 
@@ -84,73 +87,114 @@ Exploring the train\_users data revealed several factors about the data.
   PT & 0.10\% \\ 
    \hline
 \end{tabular}
+\caption{Percentage of Bookings Made to Each Destination}
+\label{table:countries}
 \end{table}
 
+Table \ref{table:countries} highlights how imbalanced the target classes, or destinations, are. NDF and US
+account for almost 90\% of the entire data, indicating that a majority of users either 
+have yet to make a booking, or book to locations in the US. The remaining nine, under-represented 
+destinations make up less than 5\% of the data each.  
+
+% Figure shows growth in accounts created over time
+\begin{figure}[!htbp]
+  \includegraphics[scale = 0.5]{accountscreated.pdf}
+  \caption{Number of accounts created each year (data only up to June 2014)}
+  \label{fig:acct_created}
+\end{figure}
+
+% Bookings made over time 
+\begin{figure}[!htbp]
+  \includegraphics[scale=0.5]{bookingsovertime.pdf}
+  \caption{Number of bookings made over time}
+  \label{fig:bookings}
+\end{figure}
+
+Figure \ref{fig:bookings} and Figure \ref{fig:acct_created} depict the trends in the date features of
+the train\_users data. Figure \ref{fig:acct_created} shows the huge increase in accounts created each year. 
+The data only includes up to June 2014. 
+depicts the trend in the number of bookings made from 2011 to 2015.
+Interestingly, there seems to be a seasonality in the data. The number of bookings made seems to 
+increase around September of each year. 
+
+
+
+% include histogram of ages 
+% include figure for genders 
+
+Figure blah depicts the distribution of user's ages, after the age feature had been cleaned and 
+missing values were handled with. The median age of all users was 36 years old. 
+
+% -----------------------------------------------------------------------------------------------
 
 
 
 \section{Feature Engineering}
 
-From the train\_users data I created a total of ? features. I pulled apart the month, year and day of 
-the week of the date features (date account created, date first active, date of first booking) and created 
-a season variable (winter, spring, summer, fall). I also calculated the difference in days between each 
-date feature:  days between the date an account was created and the date of first booking, and days 
-between date first active and date of first booking. I also cleaned the age and gender features. 
+From the train\_users data, 17 features were created. Date features were pulled apart into 
+month, year, day of the week, and season features. The difference in days between each date feature 
+(days between the date an account was created and the date of first booking, days between the date the 
+user was first active and the date of first booking). Missing and erroneous values the gender feature 
+were cleaned and recoded. The age feature contained several issues. 87,990 users (41\% of users) did 
+not enter an age, while 2,345 users (1\% of users) entered an age of greater than 100. Erroneous values 
+were cleaned and recoded, while missing values were filled in using an XGBoost model to predict those 
+ages based on ages available in the data. 
 
-From the sessions data I created a total of blah features. I aggregated the data by each user and 
-created features counting the number of unique levels for each of these features. From secs\_elapsed, 
-I also calculated summary statistics like the mean and median for each unique user. These features 
-were then joined by user id to the training data. 
+From the sessions data, 320 features were created. The data was aggregated by each user and 
+features counting the number of unique levels of each categorical feature were created. From secs\_elapsed, 
+mean, median, standard deviation, minimum and maximums were calculated for each unique user. These features 
+were then joined by user id to the train\_users data. 
 
-The following is a list of all features included in the training data: 
+\begin{table}[!htbp]
+\centering
+\begin{tabular}{|L{2cm}|L{10cm}|}
+  \hline
+  \multirow{9}{2cm}{\textbf{Original Features}} & Sign up method (facebook, basic, google) \\ \cline{2-2}
+  & Sign up flow (integers 0 to 24) \\ \cline{2-2}
+  & Language preference (25 options) \\ \cline{2-2}
+  & Affiliate channel (direct, remarketing, api...) \\ \cline{2-2}
+  & Affiliate provider (craigslist, bing, email-marketing...) \\ \cline{2-2}
+  & First affiliate tracked (untracked, linked, local ops...) \\ \cline{2-2}
+  & Sign up app (Web, Moweb, iOS, Android) \\ \cline{2-2}
+  & First device type (Mac Desktop, iPad, iPhone...) \\ \cline{2-2}
+  & First browser (Chrome, Firefox, Safari...) \\ \hline
+  \multirow{5}{2cm}{\textbf{Derived Features}} & Year, month, day of the week, season features of date account created, 
+  date first active, date first booking\\ \cline{2-2}
+  & Days between date account created and date of first booking \\ \cline{2-2}
+  & Days between date first active and date of first booking \\ \cline{2-2}
+  & Age \\ \cline{2-2}
+  & Gender \\ \cline{2-2} 
+  & Count features created from the sessions data (number of times a user looked at recent reservations, number of 
+  times a user looked at similar listings...) \\ \cline{2-2}
+  & Mean, median, standard deviation, minimum, maximum of seconds elapsed for each user's web activity\\ \hline
+\end{tabular}
+\caption{Original and Derived Features included in the training data}
+\label{table:features}
+\end{table}
 
-Features in the original data
-\begin{itemize}
-  \item signup\_method
-  \item signup\_flow
-  \item language
-  \item affiliate\_channel 
-  \item affiliate\_provider
-  \item first\_affiliate\_tracked
-  \item signup\_app
-  \item first\_device\_type
-  \item first\_browser
-\end{itemize}
+One-hot encoding was used to convert categorical features to a more machine learning compatible form.  
+Essentially, a boolean column was generated for each level of a categorical feature. Continuous 
+features were left as is. After one-hot encoding, there were a total of 596 features. Table 
+\ref{table:features} displays all features, both originall and derived, 
+that were included in the training data for model building. 
 
-Features derived or cleaned 
-\begin{itemize}
-  \item Year, day of the week, month and season of date account created, date first active, date first booking 
-  \item days between date account created and date of first booking
-  \item days between date first active and date of first booking 
-  \item age
-  \item gender
-  \item count features created from the sessions data 
-  \item mean, median, standard deviation, minimum, maximum of secs\_elapsed
-\end{itemize}
-
-One-hot encoding was used to convert categorical features to a form that works better with machine learning 
-algorithms. Essentially, a boolean column indicating a 1 or 0 was generated for each level of the categorical feature.
-Continuous features were left as is. After one-hot encoding and feature engineering, there were a total of 596
-features to use in the models. 
 
 \section{Model Building and Results}
 
-The processes used for building the three models (XGBoost, random forest, and stacked models) was not linear.
-It was an iterative process in that, when new findings were discovered or new features were added in, I went back 
-a few steps to make changes. But overall, the same process was used for all three models. 
-
-% maybe include a visual explaining the flow of this stacked model 
+The method of building the XGBoost, random forest, and stacked model was more of a circular, iterative 
+process in that, when new findings or discoveries were made, steps were retraced to implement or explore 
+those possibilites. Nonetheless, the following describes the general process that was used to build the
+three models. 
 
 The full data was partitioned into one training set, containing 70\% of the full data (149,422 rows), and one 
 test set containing 64,029 rows. All model building was performed on just the training set. For both the XGBoost 
 and random forest models, five fold cross-validation was performed on the training set, including all 596 features. 
-Both models achieved 87\% classification accuracy in this process, as well as a Normalized Discounted cumulative
-gain score of 0.92. However, both models only made predictions for a few out of the 12 possible countries. Predictions
-made included just the US, Other, and no destination found. Examining feature importance for each model showed that not 
-all features were contributing to the predictions. So, the top 200 most important features for each model were extracted. 
-The models were then refit again to the same data, but only with those top 200 features, and five fold cross-validation 
-was again performed. Accuracy and NDCG scores remained the same, but computational time was much faster. These 
-top 200 features were the only features considered from this point forward. 
+Both models achieved 87\% classification accuracy, as well as a Normalized Discounted Cumulative Gain (NDCG) score 
+(the metric used in the actual competition) of 0.92. However, both models only made predictions for NDF, US, and 
+other. Examining feature importance for each model showed that not all features were necessary. So, the models were 
+refit to just the 200 most important features and cross-validation was performed again. While accuracy and NDCG
+scores remained the same, computation time decreased tremendously. All following models were built only on just these 
+200 features. 
 
 \begin{table}[ht]
 \centering
@@ -175,56 +219,65 @@ top 200 features were the only features considered from this point forward.
 \label{table:smote}
 \end{table}
 
-To account for the highly imbalanced classes, various techniques were explored---regular oversampling with 
-replacement combined with undersampling from the overrepresented classes, before settling on 
-synthetic minority oversampling techniques (SMOTE). With SMOTE, underrepresented classes are upsampled by
-generating synthetic examples by selecting neighbors from the k-nearest neighbors of the minority classes. This was
-combined with an undersampling of the majority class. The resulting training set contained 115,137 observations. 
-Table \ref{table:smote} shows the number of observations and proportion for each country after SMOTE and 
-undersampling was performed. 
+To account for the highly imbalanced classes, several over-sampling techniques were explored. Data for under-represented
+destinations were over sampled with replacement and data from over-represented destinations were under sampled. 
+Building and testing models on this new sampled training data resulted in worse predictive accuracy than previous
+models. The final method settled on was Synthetic Minority Oversampling Techniques (SMOTE), in which underrepresented
+classes are upsampled by with generated synthetic examples selected from the k-nearest neighbors of these under-represented 
+destinations. This over-sampling technique was combined with undersampling of the over-represented destinations. The 
+resulting training set contained 115,137 observations. Table \ref{table:smote} shows the number of observations and proportion
+of data each destination accounts for, after SMOTE and undersampling was performed. 
 
-The same model fitting process (cross-validation with only the top 200 features) was again performed 
-on this new training data. For both models, accuracy and NDCG scores remained the same. However, with 
-this new training data, the models were now able to make predictions for all countries instead of just a few. 
-Although the predictions for these minority countries were not significantly accurate. Tables blah and blah 
-show the confusion matrices for the XGBoost and random forest fit to this new training data. Figures blah 
-and blah show the feature importance for each model. 
+The same model fitting processes (cross-validation with only the top 200 features) was again performed 
+on this new training data. For both models, accuracy and NDCG scores remained the same. However, both models were 
+able to make predictions for all countries (rather than just NDF, US and other), although predictions for these 
+under-represented countries were not significantly accurate. Figures blah and blah show the confusion matrices of predictions
+for the XGBoost and random forest fit to this new training data. Figures blah and blah display the feature importance 
+for each model. 
 
-After individually exploring the random forest and XGBoost models, they were combined into one 
-stacked model according to this guideline. The training data was partitiioned into five folds of around the 
-same size. Each model was built on the training folds, and tested on the held out test fold. For example, 
-the XGBoost was built on folds one, two, three and four, and used to make predictions on fold five. In the 
-second iteration, the XGBoost was build on folds two, three, four and five, and used to make predictions on
-fold one. This process was repeated for both models, until each fold had been used as a test fold. Predictions 
-from these models were stored as columns in the training data. Then, each model was fit to the full training data
-(ignoring the folds and predictions created in the previous step), and used to predict on the held out test set. 
-Predictions from these models were stored in two columns in that test set. A final XGBoost was used as the model 
-to combine, or stack the information from the previous processes. The XGBoost was fit to the predictions stored
-in the training set, and tested on the predictions stored in the test set. Resulting accuracy and NDCG score 
-for this stacked model was the same as all previous models. 
+% maybe include a visual explaining the flow of this stacked model 
+
+Both models were then combined in a stacked model. The training data was partitioned into five folds, each 
+fold making up around 20\% of the full training data. Each model was then built on the training folds, and 
+tested on the held out fold. For example, the XGBoost was first built on folds one, two, three and four, and 
+used to make predictions on fold five. In the second iteration, the XGBoost was build on folds two, three, 
+four and five, and used to make predictions on fold one. This process was repeated for both models until each 
+fold had been used as a test fold. Predictions from these models were stored as two columns in the training data. 
+Then, each model was fit to the full training data (ignoring the folds and predictions created in the
+previous step), and used to predict on the held out test set. Predictions from these models were stored in two 
+columns in that test set. A final XGBoost was used as the model to combine, or stack the information from the 
+previous processes. An XGBoost was fit to the predictions stored in the training set and tested on the predictions 
+stored in the test set. Resulting accuracy and NDCG score for this stacked model was the same as its base models, 
+as well as all previous models. 
 
 \section{Discussion and Conclusion}
 
-Various strategies were explored in an attempt to improve the performance of these models. However, 
-every method explored made no difference in the model's accuracy. One of the biggest reasons these model's 
-hovered at 87\% is the highly imbalanced classes. Three destinations---no destination found, other, and US---make 
-up over half of the data. The remaining eight, underrepresented countries each make up less than 5\% of the data. 
-Essentially, there is not enough information and data for the models to be able to differentiate 
-and make predictions for those underrepresented countries. However, because those three countries make up 
-such a substantial part of the data, the accuracy for each model remained fairly high. In order to create a model
-that can make accurate predictions for all of the twelve possible countries, a method for handling these
-highly imbalanced classes would need to be implemented. 
+Although various strategies for improving model performance were explored, no effective strategy was found---each 
+model achieved around 87\% accuracy and NDCG score of about 0.92. One 
+explanation for this is how imbalanced the target classes are. As discussed above, two destinations make up
+almost the entire data set, while the remaining 10 destinations each make up less than 5\% of the data each. 
+Essentially, there is not enough information available about these under-represented destinations to enable each model 
+to make predictions for those underrepresented countries. Instead, each model classified them mainly as bookings 
+to the US. Since NDF and US constitute such a large portion of the data, the accuracy of each model 
+remained fairly high at 87\%. In order to create a model that can make accurate predictions for all 12 possible 
+destinations, a strategy to resolve this issue of highly imbalanced classes would need to be implemented.
 
-Possibilities for future work on this, one might consider to combine more models of different varieties. 
-The second place winner of this Airbnb competition built numerous models that did not just predict destination, 
-but other models that also predicted missing values of certain features. Those features were then used in 
-predictions for more models. Overall, it appears that the top three participants were combined multiple 
-models in several layers. One might consider doing this, and expanding or adding on to the stacked model
-I implemented. One reason this stacked model did not result in a better performance than the two base models, 
-is that stacked models generally work well if the two base models perform in different ways (e.g. if one
-model predicts one category accurately but not another, and the other model predicts the category that the 
-other model is weak with, accuratley, but not the other way around). In my case, both models could not 
-make accurate predicitons for the underrepresented countries, thus, the stacked model also could not. 
+To explain why the stacked model did not result in better performance, the base models need to be examined. 
+Stacked models generally perform well when its base models differ in performance. For example, suppose base model 1
+could predict five countries well, but not the other 7. Suppose base model 2 could predict those 7 countries well, 
+but not the other 5. In this case, a stacked model would be useful because of its ability to build upon and 
+correct each model's performance. But since both the random forest and XGBoost could only make accurate predictions 
+for NDF and the US, the stacked model's performance was not a significant improvement. 
+
+Possibilities for further work on this include stacking more models than just two. The top three participants of 
+this competition combined numerous algorithms in multiple layers. Another possible strategy
+to explore, used by the second place participant of this competition, is to build multiple models to predict 
+and impute missing values for certain features. Missing or erroneous values was a significant issue with several 
+features, like age and gender. Building models to address this may be helpful with model performance. One final possibility,
+is to find a way to incorporate the other two available data sets: countries, which contains summary
+statistics about the destinations, and  age\_gender\_bkts, which contains statistics describing the users' age group, 
+gender, and destinations. One possible idea, as implemented by the second place winner, is to build models to 
+predict features within the countries data set, and use those features in the final destination predictions. 
 
 
 \section{References}
