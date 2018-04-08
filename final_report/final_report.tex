@@ -56,9 +56,9 @@ and was used by many of the top participants of this competition.
 
 % -----------------------------------------------------------------------------------------------
 
-\section{Exploratory Analysis}
+\section{About the Data}
 
-Of the six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contained information regarding user's web session activity. To minimize computation time, 10\% of rows from each unique user was randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. The train\_users data, with 213,415 rows and 16 original columns, contained user information starting in 2010. Exploratory analysis of this data revealed several factors. 
+Of the six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contains information regarding user's web session activity (e.g. what pages were viewed on the Airbnb site, what actions were taken by the user). To minimize computation time, 10\% of rows from each unique user was randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. The train\_users data, with 213,415 rows and 16 original columns, contained user information starting in 2010. Information includes features like age, gender, date of account creation, sign up method (Facebook, google...), and language preference. Exploratory analysis of this data revealed several factors. 
 
 \begin{table}[ht]
 \centering
@@ -89,45 +89,6 @@ account for almost 90\% of the entire data, indicating that a majority of users 
 have yet to make a booking, or book to locations in the US. The remaining 10, under-represented 
 destinations make up less than 5\% of the data each. The extremity of this imbalance will present 
 challenges for the machine learning algorithms explored in this paper.
-
-% Figure shows growth in accounts created over time
-\begin{figure}[!htbp]
-  \includegraphics[scale = 0.6]{accountscreated.pdf}
-  \caption{Number of accounts created each year (data only up to June 2014)}
-  \label{fig:acct_created}
-\end{figure}
-
-% Bookings made over time 
-\begin{figure}[!htbp]
-  \includegraphics[scale=0.6]{bookingsovertime.pdf}
-  \caption{Number of bookings made over time}
-  \label{fig:bookings}
-\end{figure}
-
-Figure \ref{fig:acct_created} and \ref{fig:bookings} depict the trends in the date features of
-the train\_users data. Figure \ref{fig:acct_created} shows the increase number of accounts created each year.
-Figure \ref{fig:bookings} depicts the trend in the number of bookings made from 2011 to 2015. 
-Interestingly, there seems to be a seaonality in the data. The number of bookings made seems to 
-increase around September of each year, and then decrease. 
-
-\begin{figure}[!htbp]
-  \includegraphics[scale=0.6]{ages_histogram.pdf}
-  \caption{Distribution of user ages}
-  \label{fig:ages}
-\end{figure}
-
-\begin{figure}[!htbp]
-  \includegraphics[scale=0.6]{gender_visual.pdf}
-  \caption{Gender preferences for booking destinations}
-  \label{fig:gender}
-\end{figure}
-
-Figures \ref{fig:ages} and \ref{fig:gender} depict information about the users. Note that these 
-figures reflect the age and gender features of the train\_users data after missing and erroneous 
-values were recoded and cleaned. Figure \ref{fig:ages} shows that a majority of users fall 
-between 25 and 50 years old. Median age is 36 years old. Figure \ref{fig:gender} shows that there are more female users than 
-male. There does not seem to be any obvious preference in booking destination. 
-
 
 % -----------------------------------------------------------------------------------------------
 

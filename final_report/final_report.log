@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  7 APR 2018 19:42
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  7 APR 2018 19:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -310,54 +310,29 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 65.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 65.
- <accountscreated.pdf, id=11, 578.16pt x 361.35pt>
-File: accountscreated.pdf Graphic file (type pdf)
-
-<use accountscreated.pdf>
-Package pdftex.def Info: accountscreated.pdf used on input line 95.
-(pdftex.def)             Requested size: 346.89867pt x 216.81168pt.
- <bookingsovertime.pdf, id=12, 578.16pt x 361.35pt>
-File: bookingsovertime.pdf Graphic file (type pdf)
-
-<use bookingsovertime.pdf>
-Package pdftex.def Info: bookingsovertime.pdf used on input line 102.
-(pdftex.def)             Requested size: 346.89867pt x 216.81168pt.
- <ages_histogram.pdf, id=13, 578.16pt x 361.35pt>
-File: ages_histogram.pdf Graphic file (type pdf)
-
-<use ages_histogram.pdf>
-Package pdftex.def Info: ages_histogram.pdf used on input line 114.
-(pdftex.def)             Requested size: 346.89867pt x 216.81168pt.
- <gender_visual.pdf, id=14, 578.16pt x 361.35pt>
-File: gender_visual.pdf Graphic file (type pdf)
-
-<use gender_visual.pdf>
-Package pdftex.def Info: gender_visual.pdf used on input line 120.
-(pdftex.def)             Requested size: 346.89867pt x 216.81168pt.
- [2] [3 <./accountscreated.pdf> <./bookingsovertime.pdf>] [4 <./ages_histogram.
-pdf> <./gender_visual.pdf>]
-Overfull \hbox (21.63304pt too wide) in paragraph at lines 153--174
+ [2]
+Overfull \hbox (21.63304pt too wide) in paragraph at lines 114--135
  [][] 
  []
 
-[5]
+[3]
 
-Package caption Warning: \label without proper reference on input line 220.
+Package caption Warning: \label without proper reference on input line 181.
 See the caption package documentation for explanation.
 
 
-LaTeX Warning: Reference `table:smote' on page 6 undefined on input line 229.
+LaTeX Warning: Reference `table:smote' on page 4 undefined on input line 190.
 
-[6] [7] [8] (./final_report.aux)
+[4] [5] [6] (./final_report.aux)
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 3881 strings out of 492995
- 59943 string characters out of 6132704
- 112459 words of memory out of 5000000
- 7365 multiletter control sequences out of 15000+600000
+ 3855 strings out of 492995
+ 59419 string characters out of 6132704
+ 112427 words of memory out of 5000000
+ 7343 multiletter control sequences out of 15000+600000
  22593 words of font info for 50 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  39i,12n,39p,1098b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -366,10 +341,10 @@ Here is how much of TeX's memory you used:
 </usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></
 usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></us
 r/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb>
-Output written on final_report.pdf (8 pages, 123055 bytes).
+Output written on final_report.pdf (6 pages, 91395 bytes).
 PDF statistics:
- 82 PDF objects out of 1000 (max. 8388607)
- 57 compressed objects within 1 object stream
+ 44 PDF objects out of 1000 (max. 8388607)
+ 29 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 25 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 5 words of extra memory for PDF output out of 10000 (max. 10000000)
 
