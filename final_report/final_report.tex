@@ -58,7 +58,7 @@ and was used by many of the top participants of this competition.
 
 \section{About the Data}
 
-Of the six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contains information regarding user's web session activity (e.g. what pages were viewed on the Airbnb site, what actions were taken by the user). To minimize computation time, 10\% of rows from each unique user was randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. The train\_users data, with 213,415 rows and 16 original columns, contained user information starting in 2010. Information includes features like age, gender, date of account creation, sign up method (Facebook, google...), and language preference. Exploratory analysis of this data revealed several factors. 
+Of six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contains information regarding user's web session activities (e.g. what pages were viewed on Airbnb's site, what actions were taken by the user). To minimize computation time, 10\% of rows from each unique user was randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. The train\_users data, with 213,415 rows and 16 original columns, contains user information from 2010 to 2014. Information includes features like age, gender, date of account creation, sign up method (Facebook, google...), and language preference. 
 
 \begin{table}[ht]
 \centering
@@ -84,10 +84,7 @@ Of the six available data sets, two were utilized: train\_users and sessions. Th
 \label{table:countries}
 \end{table}
 
-Table \ref{table:countries} shows how imbalanced the target destinations. Together, NDF and US
-account for almost 90\% of the entire data, indicating that a majority of users either 
-have yet to make a booking, or book to locations in the US. The remaining 10, under-represented 
-destinations make up less than 5\% of the data each. The extremity of this imbalance will present 
+Exploring the target variable, destination, reveals a signficant issue. Table \ref{table:countries} shows how imbalanced the target destinations are. Together, NDF and US account for almost 90\% of the entire data, indicating that a majority of users either have yet to make a booking, or book to locations in the US. The remaining 10, under-represented destinations make up less than 5\% of the data each. The extremity of this imbalance will present 
 challenges for the machine learning algorithms explored in this paper.
 
 % -----------------------------------------------------------------------------------------------
@@ -95,19 +92,9 @@ challenges for the machine learning algorithms explored in this paper.
 
 \section{Feature Engineering}
 
-From the train\_users data, 17 features were created. Date features were pulled apart into 
-month, year, day of the week, and season features. The differences in days between date features 
-(days between the date an account was created and the date of first booking, and days between the date a 
-user was first active and the date of first booking) were also created. Missing and erroneous values in the gender feature 
-were cleaned and recoded. The age feature contained several issues. 87,990 users (41\% of users) did 
-not enter an age, while 2,345 users (1\% of users) entered an age of greater than 100. These values 
-were recoded, while missing values were imputed using an XGBoost to predict those 
-ages based on ages available in the data. 
+From the train\_users data, 17 features were created. Date features were pulled apart into month, year, day of the week, and season features. The differences in days between date features (days between the date an account was created and the date of first booking, and days between the date a user was first active and the date of first booking) were also created. Missing and erroneous values in the gender feature were cleaned and recoded. The age feature contained several issues. 87,990 users (41\% of users) did not enter an age, while 2,345 users (1\% of users) entered an age of greater than 100. These values were recoded, while missing values were imputed using an XGBoost to predict those ages based on ages available in the data. 
 
-From the sessions data, 320 features were created. The data was aggregated by each user and 
-features counting the number of unique levels of each categorical feature were created. From secs\_elapsed, 
-mean, median, standard deviation, minimum and maximums were calculated for each unique user. These features 
-were then joined by user ID to the train\_users data. 
+For the sessions data, rows were aggregated by user ID and features counting the number of unique levels of each categorical feature were created. From secs\_elapsed, mean, median, standard deviation, minimum and maximums were calculated for each user. A total of 320 features were created and joined by user ID to the train\_users data. 
 
 \begin{table}[!htbp]
 \centering
@@ -136,66 +123,38 @@ were then joined by user ID to the train\_users data.
 \label{table:features}
 \end{table}
 
-One-hot encoding was used to convert categorical features to a form compatible with machine learning algorithms.  
-Essentially, a boolean column was generated for each level of a categorical feature. Continuous 
-features were left as is. After one-hot encoding, there were a total of 596 features. Table 
-\ref{table:features} displays all features, both original and derived, 
-that were included in the training data for model building. 
-
+One-hot encoding was used to convert categorical features to a form compatible with machine learning algorithms. Essentially, a boolean column was generated for each level of a categorical feature. Continuous features were left as is. After one-hot encoding, there were a total of 596 features. Table \ref{table:features} displays all features, both original and derived, that were included in the training data for model building. 
 
 \section{Model Building and Results}
 
-Although the methods used for model building were circular and iterative processes, rather than linear. the following describes the general process used to develop the XGBoost, random forest, and stacked model. 
-
+Although the methods used for model building were circular and iterative processes, rather than linear. the following describes the general processes used to develop the XGBoost, random forest, and stacked model. 
 
 The full data was partitioned into one training set, containing 149,422 rows (70\% of the full data), and one 
-test set containing 64,029 rows. All model building was performed on just the training set. For both the XGBoost 
-and random forest models, five fold cross-validation was performed on the training set, including all 596 features. 
-Both models achieved 87\% classification accuracy, as well as a Normalized Discounted Cumulative Gain (NDCG) score 
-(the metric used in the actual competition) of 0.92. However, both models only made predictions for NDF, US, and 
-other. Examining feature importance for each model showed that not all features were necessary. So, the models were 
-refit to just the 200 most important features and cross-validation was performed again. While accuracy and NDCG
-scores remained the same, computation time decreased tremendously. All following models were built only on just those 
-200 features. 
+test set containing 64,029 rows. All model building was performed on just the training set. For both XGBoost and random forest models, five fold cross-validation was performed, including all 596 features. Both models achieved 87\% classification accuracy, as well as a Normalized Discounted Cumulative Gain (NDCG) score (the metric used in the actual competition) of 0.92. However, both models only made predictions for NDF and the US. Examining feature importance for each model showed that not all features were necessary. So, the models were refit to just the 200 most important features and cross-validation was performed again. While accuracy and NDCG scores remained the same, computation time decreased tremendously. All following models were built only on just those 200 features. 
+
+To account for the highly imbalanced classes, two over-sampling techniques were explored. The first technique involved over-sampling with replacement from observations of the under-represented destinations, and under-sampling from observations of the over-represented destinations. The second combined under-sampling with Synthetic Minority Oversampling Techniques (SMOTE). SMOTE involves generating synthetic examples of those under-represented destinations by selecting from the k-nearest neighbors. For this analysis, k = 5 was chosen. For both techniques, over-sampling was performed until each under-represented destination constituted at least 4\% of the data (any higher and it was found that model performance on the test set decreased dramatically). The same model fitting processes (cross-validation with only the top 200 features) were again performed on the new training sets. For both models on both data sets, accuracy and NDCG scores remained the same. However, both models were able to make predictions for more under-represented countries (rather than just NDF and US), although those predictions were not significantly accurate. Table \ref{cm:over_sampled} displays the confusion matrix of predictions from the XGBoost built on the over-sampled training data (not with SMOTE). Confusion matrices for the random forest models, and those for models built on the SMOTE training data, looked similar. 
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{| l | l | l |}
+\begin{tabular}{r | rrrrrrrrrrrr}
+ & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 \\ 
   \hline
-  \textbf{Country} & \textbf{N} & \textbf{Proportion} \\ 
-  \hline
-  AU & 5670 & 0.05 \\ 
-  CA & 5000 & 0.04 \\ 
-  DE & 5944 & 0.05 \\ 
-  ES & 6300 & 0.05 \\ 
-  FR & 7034 & 0.06 \\ 
-  GB & 6508 & 0.06 \\ 
-  IT & 5955 & 0.05 \\ 
-  NDF & 35000 & 0.30 \\ 
-  NL & 5340 & 0.05 \\ 
-  other & 7066 & 0.06 \\ 
-  PT & 5320 & 0.05 \\ 
-  US & 20000 & 0.17 \\ 
-   \hline
+1 &   0 &   0 &   0 &   0 &   1 &   0 &   0 &   0 &   1 &   5 &   0 &  22 \\ 
+  2 &   1 &   2 &   0 &   0 &   3 &   0 &   1 &   0 &   1 &   2 &   0 &  14 \\ 
+  3 &   0 &   0 &   0 &   0 &   1 &   1 &   1 &   0 &   0 &   4 &   0 &  14 \\ 
+  4 &   0 &   0 &   1 &   0 &   1 &   1 &   1 &   0 &   1 &   3 &   0 &  17 \\ 
+  5 &   0 &   0 &   2 &   1 &   2 &   0 &   0 &   0 &   0 &   1 &   0 &   9 \\ 
+  6 &   0 &   0 &   0 &   0 &   1 &   2 &   0 &   0 &   0 &   1 &   0 &   8 \\ 
+  7 &   0 &   0 &   1 &   0 &   0 &   0 &   0 &   0 &   1 &   3 &   0 &   7 \\ 
+  8 &   0 &   0 &   0 &   0 &   0 &   0 &   0 & 26154 &   0 &   0 &   0 &   0 \\ 
+  9 &   0 &   0 &   1 &   0 &   5 &   0 &   2 &   0 &   0 &   5 &   0 &  10 \\ 
+  10 &   1 &   0 &   3 &   1 &   5 &   1 &   1 &   0 &   0 &   6 &   1 &  25 \\ 
+  11 &   0 &   4 &   1 &   0 &   4 &   0 &   3 &   0 &   1 &   7 &   1 &  43 \\ 
+  12 & 111 & 294 & 213 & 470 & 1032 & 483 & 586 &   0 & 155 & 2082 &  43 & 12930 \\ 
 \end{tabular}
-\label{table:smote}
+\caption{Confusion matrix for predictions made with XGBoost built on the over-sampled training data}
+\label{cm:over_sampled}
 \end{table}
-
-To account for the highly imbalanced classes, several over-sampling techniques were explored. Data for under-represented
-destinations were over sampled with replacement and data from over-represented destinations were under sampled. 
-Building and testing models on this new sampled training data resulted in worse predictive accuracy than previous
-models. The final method settled on was Synthetic Minority Oversampling Techniques (SMOTE), in which underrepresented
-classes are upsampled by with generated synthetic examples selected from the k-nearest neighbors of these under-represented 
-destinations. This over-sampling technique was combined with undersampling of the over-represented destinations. The 
-resulting training set contained 115,137 observations. Table \ref{table:smote} shows the number of observations and proportion
-of data each destination accounts for, after SMOTE and undersampling was performed. 
-
-The same model fitting processes (cross-validation with only the top 200 features) was again performed 
-on this new training data. For both models, accuracy and NDCG scores remained the same. However, both models were 
-able to make predictions for all countries (rather than just NDF, US and other), although predictions for these 
-under-represented countries were not significantly accurate. Figures blah and blah show the confusion matrices of predictions
-for the XGBoost and random forest fit to this new training data. Figures blah and blah display the feature importance 
-for each model. 
 
 % maybe include a visual explaining the flow of this stacked model 
 
@@ -211,6 +170,8 @@ columns in that test set. A final XGBoost was used as the model to combine, or s
 previous processes. An XGBoost was fit to the predictions stored in the training set and tested on the predictions 
 stored in the test set. Resulting accuracy and NDCG score for this stacked model was the same as its base models, 
 as well as all previous models. 
+
+Although the NDCG scores achieved by models in this paper are higher than the competition's top three participants, it does not reflect how the models would perform on the same data that was used to evaluate the participants’ models.
 
 \section{Discussion and Conclusion}
 
