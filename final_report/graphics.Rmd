@@ -58,7 +58,7 @@ firstbookDF$date <- as.Date(firstbookDF$date, format="%Y-%m-%d")
 ggplot(firstbookDF, aes(x = date, y = count.Freq)) + 
   geom_point() + 
   geom_smooth() + 
-  scale_x_date(date_breaks = "6 months") + 
+  scale_x_date(date_breaks = "3 months") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   ylab("Count") + xlab("Date") + 
   ggtitle("Number of bookings made over time")
@@ -66,8 +66,33 @@ ggplot(firstbookDF, aes(x = date, y = count.Freq)) +
 ggsave("bookingsovertime.pdf", plot = last_plot(), width = 8, height = 5)
 ```
 
+```{r}
+# number of accounts created per year, separated by month 
+ggplot(train_users, aes(x = acct_created_y, fill = acct_created_m)) + 
+  geom_histogram(stat = "count") + 
+  scale_y_continuous("Number of Accounts Created") + 
+  scale_x_discrete("Year") + 
+  ggtitle("Number of accounts created per year") + 
+  scale_fill_discrete(name = "Month")
+
+# only have data for up to June 
+# shows huge increase in users creating Airbnb accounts each year 
+
+ggsave("accountscreated.pdf", plot = last_plot(), width = 8, height = 5)
+```
 
 
+```{r}
+xtable::xtable(head(sessions))
+```
+```{r}
+reportdf <- train_users %>% select(id, date_first_booking, gender, age, signup_method, first_browser, country_destination)
+xtable::xtable(head(reportdf))
+```
+
+```{r}
+xtable::xtable(table(sampled_predsdf_xgb$max_prob, sampled_predsdf_xgb$label))
+```
 
 
 
