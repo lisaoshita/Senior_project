@@ -55,9 +55,10 @@ train_users$acct_created_m <- format(train_users$acct_created_date, "%m")
 
 ggplot(train_users, aes(x = acct_created_y, fill = acct_created_m)) + 
   geom_histogram(stat = "count") + 
-  scale_y_continuous("number accounts created") + 
-  scale_x_discrete("year account created") + 
-  ggtitle("Number of accounts created per year")
+  scale_y_continuous("Number of Accounts Created") + 
+  scale_x_discrete("Year") + 
+  ggtitle("Number of accounts created per year") + 
+  scale_fill_discrete(name = "Month")
 
 # number of accounts created increases from 2010 - 2014
 # accounts created up to June 2014
