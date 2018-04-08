@@ -59,6 +59,7 @@ smote_list[[12]] <- training %>% filter(country_destination == "US") %>% sample_
 
 smoted_train <- bind_rows(smote_list)
 smoted_train <- smoted_train[sample(nrow(smoted_train)), ]
+beepr::beep()
 
 # ========================================================================================
 # fit random forest to SMOTEd data 
@@ -103,6 +104,7 @@ n_round <- 10
 smoted_xgb <- xgb.train(params = parameters, 
                  data = smoted_train_d, 
                  nrounds = n_round)
+beepr::beep()
 
 smoted_test_d <- xgb.DMatrix(data = data.matrix(test %>% select(imp_f_xgb)),
                              label = as.numeric(test$country_destination) - 1)
@@ -120,6 +122,7 @@ table(smoted_preds_df$max_prob, smoted_preds_df$label) # only predicting 3,6,8,9
 
 # accuracy 
 sum(smoted_preds_df$max_prob == smoted_preds_df$label) / nrow(smoted_preds_df) # 0.8752753
+beepr::beep()
 
 
 
