@@ -36,7 +36,7 @@ n_classes <- length(unique(train$country_destination))
 parameters <- list("objective" = "multi:softprob",
                    "num_class" = 12,
                    eta = 0.3, 
-                   max_depth = 6, 
+                   max_depth = 8, 
                    min_child_weight = 1, 
                    subsample = 0.8)
 n_round <- 10
@@ -72,7 +72,7 @@ full_model <- xgb.train(params = parameters,
 # Predict hold-out test set
 heldout_test_pred <- predict(full_model, newdata = test_matrix)
 predictions <- matrix(heldout_test_pred, 
-                      nrow = n_classes, 
+                      nrow = 12, 
                       ncol=length(heldout_test_pred)/n_classes) %>% t() %>% data.frame() %>% mutate(label = test_label + 1,
                                                                                                     max_prob = max.col(., "last"))
 # not working because not all classes are predicted

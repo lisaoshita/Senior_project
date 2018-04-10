@@ -279,38 +279,38 @@ beepr::beep()
 
 # xgboost
 
-train_xgb <- train_meta1 %>% select(imp_f_xgb, country_destination)
+train1_xgb <- train_meta1 %>% select(imp_f_xgb, country_destination)
 
-test_xgb <- test_meta1 %>% select(imp_f_xgb, country_destination)
+test1_xgb <- test_meta1 %>% select(imp_f_xgb, country_destination)
 
 # set up training + test
-full_train <- xgb.DMatrix(data = data.matrix(train_xgb %>% select(-country_destination)), 
-                          label = as.numeric(train_xgb$country_destination) - 1)
+full_train1 <- xgb.DMatrix(data = data.matrix(train1_xgb %>% select(-country_destination)), 
+                          label = as.numeric(train1_xgb$country_destination) - 1)
 
-full_test <- xgb.DMatrix(data = data.matrix(test_xgb %>% select(-country_destination)), 
-                         label = as.numeric(test_xgb$country_destination) - 1)
+full_test1 <- xgb.DMatrix(data = data.matrix(test1_xgb %>% select(-country_destination)), 
+                         label = as.numeric(test1_xgb$country_destination) - 1)
 
 # fit model 
-xgb_full <- xgb.train(params = parameters, 
-                      data = full_train, 
+xgb_full1 <- xgb.train(params = parameters, 
+                      data = full_train1, 
                       nrounds = n_round)
 
 # predict
-xgb_preds <- predict(xgb_full, newdata = full_test)
+xgb_preds1 <- predict(xgb_full1, newdata = full_test1)
 
 # store predictions as df 
-preds_df <- as.data.frame(matrix(xgb_preds, nrow = length(xgb_preds) / 12, 
+preds_df1 <- as.data.frame(matrix(xgb_preds1, nrow = length(xgb_preds1) / 12, 
                                  ncol = 12, 
                                  byrow = TRUE)) %>% mutate(label = as.numeric(test_meta1$country_destination),
                                                            max_prob = max.col(., "last"))
 # checking accuracy
-sum(preds_df$max_prob == preds_df$label) / nrow(preds_df) # 87.4% 
-table(preds_df$max_prob, preds_df$label)
+sum(preds_df1$max_prob == preds_df1$label) / nrow(preds_df1) # 87.4% 
+table(preds_df1$max_prob, preds_df1$label)
 
-ndcg5(xgb_preds, full_test) #  0.9208434
+# ndcg5(xgb_preds, full_test) #  0.9208434
 
 # store predictions in column M1 of test meta 
-test_meta1$M1 <- preds_df$max_prob
+test_meta1$M1 <- preds_df1$max_prob
 
 # ---------------------------------------------------------------------------------------
 
@@ -318,7 +318,7 @@ test_meta1$M1 <- preds_df$max_prob
 
 train_meta1_rf <- train_meta1 %>% select(imp_f_rf, country_destination)
 
-rf_full <- randomForest(country_destination ~ ., 
+rf_full1 <- randomForest(country_destination ~ ., 
                         data = train_meta1_rf, 
                         ntree = 50, 
                         do.trace = 10, 
@@ -329,7 +329,7 @@ beepr::beep()
 # predictions (this achieves 98%??)
 test_meta1_rf <- test_meta1 %>% select(imp_f_rf, country_destination)
 
-test_meta1$M2 <- predict(rf_full, newdata = test_meta1_rf) # 0.86
+test_meta1$M2 <- predict(rf_full1, newdata = test_meta1_rf) # 0.86
 
 # =================================================================================================================
 # stacking - using xgboost as stacker 
@@ -342,33 +342,33 @@ test_meta1$M2 <- as.numeric(test_meta1$M2) - 1
 
 
 # set up training data 
-stacked_train <- xgb.DMatrix(data = data.matrix(train_meta1 %>% select(M1, M2, age_clean, starts_with("firstbook"))), 
+stacked_train1 <- xgb.DMatrix(data = data.matrix(train_meta1 %>% select(M1, M2)), 
                              label = as.numeric(train_meta1$country_destination) - 1)
 
 # set up test
-stacked_test <- xgb.DMatrix(data = data.matrix(test_meta1 %>% select(M1, M2, age_clean, starts_with("firstbook"))),
+stacked_test1 <- xgb.DMatrix(data = data.matrix(test_meta1 %>% select(M1, M2)),
                             label = as.numeric(test_meta1$country_destination) - 1)
 
 # fit xgboost 
-stacked_xgb <- xgb.train(params = parameters, 
-                         data = stacked_train, 
+stacked_xgb1 <- xgb.train(params = parameters, 
+                         data = stacked_train1, 
                          nrounds = n_round)
 
 # predict on test 
-stacked_preds <- predict(stacked_xgb, newdata = stacked_test)
+stacked_preds1 <- predict(stacked_xgb1, newdata = stacked_test1)
 
 # convert to data frame
-stacked_predsdf <- as.data.frame(matrix(stacked_preds, 
-                                        nrow = length(stacked_preds) / 12, 
+stacked_predsdf1 <- as.data.frame(matrix(stacked_preds1, 
+                                        nrow = length(stacked_preds1) / 12, 
                                         ncol = 12, 
-                                        byrow = TRUE)) %>% mutate(label = (getinfo(stacked_test, "label") + 1),
+                                        byrow = TRUE)) %>% mutate(label = (getinfo(stacked_test1, "label") + 1),
                                                                   max_prob = max.col(., "last"))
 
 # accuracy - 87.6%
-sum(stacked_predsdf$max_prob == stacked_predsdf$label) / length(stacked_predsdf$max_prob) #92% accuracy
+sum(stacked_predsdf1$max_prob == stacked_predsdf1$label) / length(stacked_predsdf1$max_prob) #92% accuracy
 
 # confusion matrix 
-table(stacked_predsdf$max_prob, stacked_predsdf$label)
+table(stacked_predsdf1$max_prob, stacked_predsdf1$label)
 
 # ncdg metric 
-ndcg5(stacked_preds, stacked_test) # 0.962
+ndcg5(stacked_preds1, stacked_test1) 

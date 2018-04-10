@@ -64,7 +64,11 @@ sum(pred == test_label) / length(pred)
 # total decrease in node impurities from splitting on the variable, averaged over all trees
 
 feature_imp <- rf_model$importance
-feature_imp <- feature_imp[order(-feature_imp[, ncol(feature_imp)]), ] # decreasing order 
+feature_imp <- feature_imp[order(-feature_imp[, 13]), ] # decreasing order 
+feature_imp_df <- data.frame(feature = rownames(feature_imp), 
+                             decreaseAccuracy = feature_imp[,13],
+                             decreaseGini = feature_imp[,14])
+rownames(feature_imp_df) <- NULL
 
 # =================================================================================================================
 # new random forest (on only most important features)
