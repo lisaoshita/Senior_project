@@ -82,17 +82,25 @@ ggsave("accountscreated.pdf", plot = last_plot(), width = 8, height = 5)
 ```
 
 
-```{r}
-xtable::xtable(head(sessions))
-```
-```{r}
-reportdf <- train_users %>% select(id, date_first_booking, gender, age, signup_method, first_browser, country_destination)
-xtable::xtable(head(reportdf))
-```
 
 ```{r}
 xtable::xtable(table(sampled_predsdf_xgb$max_prob, sampled_predsdf_xgb$label))
 ```
+
+
+```{r}
+xtable::xtable(table(stacked_predsdf1$max_prob, stacked_predsdf1$label))
+```
+
+```{r}
+# feature importance 
+# random forest
+xtable::xtable(feature_imp_df[1:20, ])
+xtable::xtable(importance[1:20, ])
+```
+
+
+
 
 
 

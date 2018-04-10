@@ -1,0 +1,15 @@
+\begin{thebibliography}{1}
+
+\bibitem{xgb}
+{Introduction to Boosted Trees - xgboost 0.7 documentation}.
+
+\bibitem{BenGorman2016}
+{Ben Gorman}.
+\newblock {A Kaggler's Guide to Model Stacking in Practice | No Free Hunch},
+  2016.
+
+\bibitem{Chawla2002}
+Nitesh Chawla, Kevin Bowyer, Lawrence Hall, and Philip Kegelmeyer.
+\newblock {SMOTE: Synthetic Minority Over-sampling Technique}, 2002.
+
+\end{thebibliography}
