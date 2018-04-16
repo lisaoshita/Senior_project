@@ -171,6 +171,37 @@ head(importance1)
 first_201 <- importance1[1:20,]
 xgb.plot.importance(first_201)
 
+# ==============================================================================================================
+# 5-FOLD CV WITH XGBOOST
+# ==============================================================================================================
+
+n_classes <- length(unique(train$country_destination))
+
+parameters <- list("objective" = "multi:softprob",
+                   "num_class" = 12,
+                   eta = 0.3, 
+                   max_depth = 8, 
+                   min_child_weight = 1, 
+                   subsample = 0.8)
+n_round <- 10
+cv_fold <- 5
+
+full_train_m <- xgb.DMatrix(data = data.matrix(train[, -1]), 
+                            label = as.numeric(train$country_destination) - 1)
+
+start_time_xgb <- Sys.time()
+cv_model <- xgb.cv(params = parameters,
+                   data = train_matrix,
+                   nrounds = n_round,
+                   nfold = cv_fold,
+                   early_stop_round = 1,
+                   verbose = F,
+                   maximize = T,
+                   prediction = T)
+end_time_xgb <- Sys.time()
+
+end_time_xgb - start_time_xgb # 27.52733 mins
+
 
 # variables used: 
 
