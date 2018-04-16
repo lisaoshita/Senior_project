@@ -134,7 +134,11 @@ cv_stacked <- function(training_folds) {
   print("NDCG metric of stacked model:")
   (ndcg <- ndcg5(stacked_preds, stacked_test)) # 0.962
   
-  return(list(accuracy, cf_matrix, ndcg, data.frame(train_meta$M1, train_meta$M2), data.frame(test_meta$M1, test_meta$M2)))
+  return(list(accuracy, 
+              cf_matrix, 
+              ndcg, 
+              data.frame(train_meta$M1, train_meta$M2), 
+              data.frame(test_meta$M1, test_meta$M2)))
   
 }
 
@@ -147,11 +151,24 @@ iteration_5 <- cv_stacked(training_folds = folds$Fold5)
 end_time <- Sys.time()
 
 
+# -----------------------------------------------------------------------------
+# RESULTS OF CV WITH STACKED MODEL
+# -----------------------------------------------------------------------------
 
+# average accuracy 
+mean(iteration_1[[1]],
+     iteration_2[[1]],
+     iteration_3[[1]],
+     iteration_4[[1]],
+     iteration_5[[1]]) # 0.8757594
 
+# average NDCG score
+mean(iteration_1[[3]]$value,
+     iteration_2[[3]]$value,
+     iteration_3[[3]]$value,
+     iteration_4[[3]]$value,
+     iteration_5[[3]]$value) # 0.9258454
 
-train1 <- train[folds$Fold1, ]
-length(folds$Fold1)
+end_time - start_time # 3.242782 hours
 
-delete <- train[folds$Fold1, ]
 
