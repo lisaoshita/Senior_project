@@ -40,7 +40,7 @@ Stacking, also called meta ensembling, is a technique used to combine informatio
 
 \section{About the Data}
 
-Of six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contains information regarding user's web session activities (e.g. what pages were viewed on Airbnb's site, what actions were taken by the user). To minimize computation time, 10\% of rows from each unique user was randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. 
+Of six available data sets, two were utilized: train\_users and sessions. The sessions data, with 1,048,575 rows and 12,994 unique users, contains information regarding user's web session activities (e.g. what pages were viewed on Airbnb's site, what actions were taken by the user). To minimize computation time, 10\% of the rows from each unique user were randomly sampled. This new sampled data, containing 104,424 rows, was used for all following analyses. 
 
 The train\_users data, with 213,415 rows and 16 original columns, contains user information from 2010 to 2014. Information includes features like age, gender, date of account creation, sign up method (Facebook, Google...), and language preference. 
 
