@@ -187,4 +187,63 @@ rf_vars <- colnames(new_train)[-1] # for stacking (251 features)
 # [241] "num_12"                                "age_bucket70.74"                       "ad_num_p5"                            
 # [244] "ad_num_signup"                        
 
+# =================================================================================================================
+# 5-fold cv on full data
+
+
+randomForest(country_destination ~ ., 
+             data = new_train_data, 
+             ntree = 50, 
+             importance = TRUE, 
+             do.trace = 10)
+
+set.seed(444) # from stacking_function.R
+folds <- caret::createFolds(y = train$country_destination, 
+                            k = 5, 
+                            list = TRUE, 
+                            returnTrain = TRUE) # if returnTrain false, will return test sets
+
+rf_cv <- function(folds) {
+  
+  # set up test and train 
+  training <- train[folds, ]
+  training <- training %>% select(country_destination, imp_f_rf)
+  
+  testing <- train[-folds, ]
+  testing <- testing %>% select(country_destination, imp_f_rf)
+  
+  # fit model
+  rf_fit <- randomForest(country_destination ~ ., 
+                         data = training,
+                         ntree = 50,
+                         do.trace = 10
+                         )
+  
+  # test 
+  rf_preds <- predict(rf_fit, newdata = testing)
+  
+  # accuracy
+  accuracy <- sum(rf_preds == testing$country_destination) / length(rf_preds)
+  
+  return(accuracy)
+  
+}
+
+start_time_rf <- Sys.time()
+iteration_1_rf <- rf_cv(folds = folds$Fold1)
+iteration_2_rf <- rf_cv(folds = folds$Fold2)
+iteration_3_rf <- rf_cv(folds = folds$Fold3)
+iteration_4_rf <- rf_cv(folds = folds$Fold4)
+iteration_5_rf <- rf_cv(folds = folds$Fold5)
+end_time_rf <- Sys.time()
+
+end_time_rf - start_time_rf # 28.66021 mins
+
+mean(iteration_1_rf,
+     iteration_2_rf, 
+     iteration_3_rf,
+     iteration_4_rf,
+     iteration_5_rf) # 0.8751083
+
+
 
