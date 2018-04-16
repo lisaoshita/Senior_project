@@ -235,6 +235,8 @@ The XGBoost and random forest were then combined in a stacked model \cite{BenGor
 \label{cm:stacked}
 \end{table}
 
+Lastly, all three models---the XGBoost, random forest, and stacked model---were used to perform five-fold cross-validation on the full data. Metrics achieved in this step were the same as all previous metrics (Accuracy: 0.87, NDCG score: 0.92). Run times for the XGBoost, random forest and stacked models were 27.5 minutes, 28.7 minutes, and 3.24 hours, respectively.
+
 Although the NDCG scores achieved by models in this paper are higher than the competition's top performing models, it does not reflect how they would perform on the same data used to evaluate those model submissions. 
 
 \section{Discussion and Conclusion}
