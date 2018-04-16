@@ -123,15 +123,15 @@ n_round <- 10
 
 
 # function to fit xgboost, returns predictions on test set 
-cv_xgboost <- function(train1, train2, train3, train4, test) { 
+cv_xgboost <- function(train1, train2, train3, train4, test, data) { 
   
-  # set up train and test data, include only features from imp_f_xgb
-  train <- train_meta[which(train_meta$fold == train1 |
-                              train_meta$fold == train2 |
-                              train_meta$fold == train3 | 
-                              train_meta$fold == train4), ] %>% select(imp_f_xgb, country_destination)
+  # set up train and test data, include only features from imp_f_xg
+  train <- data[which(data$fold == train1 |
+                        data$fold == train2 |
+                        data$fold == train3 | 
+                        data$fold == train4), ] %>% select(imp_f_xgb, country_destination)
   
-  test <- train_meta[which(train_meta$fold == test), ] %>% select(imp_f_xgb, country_destination)
+  test <- data[which(data$fold == test), ] %>% select(imp_f_xgb, country_destination)
   
   # convert train and test to Dmatrices
   train_m <- xgb.DMatrix(data = data.matrix(train %>% select(-country_destination)), 
@@ -173,15 +173,15 @@ beepr::beep()
 # =================================================================================================================
 
 # function to fit rf on training data and predict on test
-cv_rf <- function(train1, train2, train3, train4, test) {
+cv_rf <- function(train1, train2, train3, train4, test, data) {
   
   # set up train and test sets
-  train <- train_meta[which(train_meta$fold == train1 |
-                              train_meta$fold == train2 |
-                              train_meta$fold == train3 | 
-                              train_meta$fold == train4), ] %>% select(imp_f_rf, country_destination)
+  train <- data[which(data$fold == train1 |
+                              data$fold == train2 |
+                              data$fold == train3 | 
+                              data$fold == train4), ] %>% select(imp_f_rf, country_destination)
   
-  test <- train_meta[which(train_meta$fold == test), ] %>% select(imp_f_rf, country_destination)
+  test <- data[which(data$fold == test), ] %>% select(imp_f_rf, country_destination)
   
   # fit model 
   rf_model <- randomForest(country_destination ~ ., 
