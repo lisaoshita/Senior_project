@@ -18,26 +18,35 @@
 \begin{frame}
 \frametitle{About the Competition}
   \begin{itemize}
-    \item Recruiting competition hosted on Kaggle from November 2015 to February 2016
-    \item Task: build a model to predict where new Airbnb users will book their first destinations
-    \item 12 possible destinations to predict: Australia, Canada, France, Germany, Italy, Netherlands, Portugal, Spain, United Kingdom, US, other and no destination found (NDF)
+    \item Recruiting competition hosted on Kaggle from November 2015 to February 2016 \vspace{1ex}
+    \item \textbf{Task:} build a model to predict where new Airbnb users will book their first destinations \vspace{1ex}
+    \item \textbf{12 possible destinations to predict:} Australia, Canada, France, Germany, Italy, Netherlands, Portugal, Spain, United Kingdom, US, other and no destination found (NDF)
   \end{itemize}
 \end{frame}
 
 % about train_users and sessions data
+% increase spacing between train_users and sessions 
 \begin{frame}
 \frametitle{About the Data}
 \begin{itemize}
-  \item \texttt{train\_users}: 213,415 observations and 16 rows, contains information about users from 2010 to 2014
-  \item \texttt{sessions}: 1,048,575 rows and 12,994 unique users, contains information about web session activity for each user
-  \item 10\% of rows from each unique user were randomly sampled
-  \item New sampled sessions data contained 104,424 rows
+  \item \textbf{train\_users} 
+  \begin{itemize}
+    \item 213,415 observations and 16 rows
+    \item Contains information about users from 2010 to 2014 \vspace{2ex}
+  \end{itemize}
+  \item \textbf{sessions}
+  \begin{itemize}
+    \item 1,048,575 rows and 12,994 unique users
+    \item contains information about web session activity for each user
+    \item 10\% of rows from each unique user were randomly sampled
+    \item New sampled data contained 104,424 rows  
+  \end{itemize}
 \end{itemize}
 \end{frame}
 
 % talk about the imbalanced classes - present a problem later in analysis 
 \begin{frame}
-\frametitle{Booking Destinations: extremely imbalanced classes}
+\frametitle{Booking Destinations: Extremely Imbalanced Classes}
 \begin{table}[ht]
 \centering
 \begin{tabular}{| r |c |}
@@ -80,98 +89,131 @@
 \begin{itemize}
   \item Date features
   \item Age and gender
-  \item Count features created from the sessions data (314 features: number of times a user viewed recent reservations, number of times a user viewed similar listings...)
+  \item Count features created from the sessions data (e.g. number of times a user viewed recent reservations, number of times a user viewed similar listings...)
   \item Summary statistics of seconds elapsed for each user’s web session
-  \item After all feature engineering and one-hot encoding, there were a total of 596 features for use in the model
 \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Model Building}
+\frametitle{Model Building: Feature Importance}
 \begin{itemize}
-  \item Full data was split into training and test sets
-  \item 5-fold cross validation with both the XGBoost and Random forest achieved 87\% classification accuracy and NDCG score of 0.92, but only made predictions for NDF and the US
-  \item Both models were fit to just the top 200 most important features and cross-validation was again performed - both achieved same results as previously, but computation time decreased 
+  \item Full data was split into training (70\% of the data) and test sets
+  \item 5-fold cross-validation was performed with XGBoost and random forest models, with just the top 200 most important features
+  \item \textbf{Accuracy:} 87\%
+  \item Both models only made predictions for US and NDF
 \end{itemize}
 \end{frame}
 
+\begin{frame}
+\frametitle{Model Building: Feature Importance}
 
-% \begin{frame}
-% \frametitle{Model Building: Feature Importance}
-% include tables of feature importance? 
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Model Building: Oversampling}
-% \begin{itemize}
-%   \item Oversampling with replacement from countries under-represented in the data, and undersample from countries over-represetned in the data
-%   \item Synthetic Minority Oversampling Techniques (SMOTE)
-% \end{itemize}
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Model Building: Results from Oversampling Techniques}
-% \begin{itemize}
-%   \item Same accuracy and NDCG scores as all previous models
-%   \item Both random forest and XGBoost were now able to make predictions for all booking destinations (though not well) 
-% \end{itemize}
-% \end{frame}
-% 
-% % for this frame - make each bullet point pop up one at a time
-% \begin{frame}
-% \frametitle{Model Building: Stacked Model}
-% \begin{itemize}
-%   \item Partition the training data into five folds 
-%   \item Build each model on the training folds, and test on the held-out test fold 
-%   \item Store predictions from each model as two columns in the training data 
-%   \item Repeat this process until each fold had been used as a test fold 
-%   \item Fit each model to the full training data, and predict on the test set 
-%   \item Store predictions as two columns in the test set 
-%   \item Use a final XGBoost as the "stacker" - fit to the predictions stored in the training set, and predict on the predictions stored in the test set 
-% \end{itemize}
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Model Building: Results of the Stacked Model}
-% \begin{itemize}
-%   \item Accuracy and NDCG scores were the same as all previous models 
-%   \item include confusion matrix 
-% \end{itemize}
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Model Building: Stacked Model confusion matrix}
-% \begin{itemize}
-%   \item include confusion matrix here 
-% \end{itemize}
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Model Building: Final Models}
-% \begin{itemize}
-%   \item 5-fold cross-validation was performed for all three models on the entire data 
-%   \item Accuracy and NDCG scores remained the same as all previous models 
-%   \item Run times for the XGBoost, random forest and stacked models were 27.5 minutes, 28.7 minutes, and 3.24 hours, respectively (include this as a table?) 
-% \end{itemize}
-% \end{frame}
-% 
-% 
-% \begin{frame}
-% \frametitle{Discussion and Conclusions}
-% \begin{itemize}
-%   \item No effective strategy was found for improving model accuracy
-%   \item The stacked model did not perform better than the two base models because both base models could not make accurate predictions for the under-represented booking destinations 
-% \end{itemize}
-% \end{frame}
-% 
-% \begin{frame}
-% \frametitle{Next Steps?}
-% \begin{itemize}
-%   \item Stack more than just two models
-%   \item Build additional models to predict and impute missing values 
-%   \item Find a way to incorporate the other 4 remaining data sets 
-%   \item Parameter tuning 
-% \end{itemize}
-% \end{frame}
+\begin{table}[ht]
+\centering
+\begin{tabular}{| l | l |}
+  \hline
+  \textbf{XGBoost} & \textbf{Random Forest} \\ 
+  \hline
+  firstbook\_y.1 & firstbook\_sn.1 \\
+  age\_clean & firstbook\_wkd.1 \\
+  signup\_flow & firstbook\_y.1 \\
+  firstbook\_snspring & lag\_acb\_binNA \\
+  affiliate\_channelother & lag\_acb\_bin.1..365. \\
+  gender\_cleanFEMALE & firstbook m.1 \\
+  gender\_cleanMALE & lag\_bts\_bin.1..1369. \\
+  age\_bucket.1 & lag\_bts\_binNA \\
+  lag\_acb\_bin.1..365. & firstbook\_snspring \\
+  firstbook\_y2014 & firstbook y2013 \\
+  \hline
+\end{tabular}
+\caption{Top 10 most import features for each model}
+\end{table}
+
+\end{frame}
+
+% ----------------------------------------------------------------
+\begin{frame}
+\frametitle{Model Building: Accounting for Imbalanced Classes}
+\begin{itemize}
+  \item Two techniques:
+  \begin{itemize}
+    \item Oversampling with replacement from under-represented destinations, undersampling from over-represented destinations
+    \item Synthetic Minority Oversampling Techniques (SMOTE) combined with undersampling from over-represented destinations 
+  \end{itemize}
+  \item Under-represented destinations made up at least 4\% of the training data after oversampling
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Model Building: Results of Oversampling Techniques}
+\begin{itemize}
+  \item \textbf{Accuracy:} 87\%
+\end{itemize}
+\begin{figure}
+\includegraphics[width=1\linewidth]{confusion_matrix.png}
+\caption{Confusion matrix of predictions made with XGBoost on the regular over-sampled training set}
+\end{figure}
+\end{frame}
+
+% ----------------------------------------------------------------
+
+\begin{frame}
+\frametitle{Model Building: Stacked Modeling}
+\begin{itemize}
+  \item Training data was partitioned into five folds, each containing 20\% of the data
+  \item Build each model on four of the training folds, test on the held-out fold
+  \item Repeated the process until each fold was used as a test fold
+  \item Stored those predictions in two columns in the training set
+  \item Fit each model to the full training set, predict on the test data, store predictions in the test set
+  \item Final XGBoost fit to the predictions stored in the training set and tested on predictions stored in the test set 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Model Building: Results of Stacking}
+\begin{itemize}
+  \item \textbf{Accuracy:} 87\%
+\end{itemize}
+\begin{figure}
+\includegraphics[width=1\linewidth]{stacked_confusion_m.png}
+\caption{Confusion matrix of stacked model predictions, trained on the regular over-sampled training set}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Model Building: Last Steps}
+\begin{itemize}
+  \item Perform five-fold cross-validation with XGBoost, random forest, and stacked model on the full data 
+  \item \textbf{Accuracy:} 87\%
+  \item Run times: 
+  \begin{itemize}
+    \item Random forest: 27.5 min
+    \item XGBoost: 28.7 min
+    \item Stacked model: 3.24 hr
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Discussion: Model Performance}
+\begin{itemize}
+  \item Extremely imbalanced classes
+  \item Base classifiers of the stacked model performed poorly in similar ways
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Discussion: Next Steps}
+\begin{itemize}
+  \item Stack more than two models 
+  \item Build additional models to predict missing values for certain variables
+  \item Incorporate the other available data sets 
+  \item Parameter tuning
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+Thank you!
+\end{frame}
+
 
 \end{document}
