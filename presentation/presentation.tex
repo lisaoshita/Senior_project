@@ -2,19 +2,19 @@
  
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}% http://ctan.org/pkg/lm
-% \usepackage[demo]{graphicx}
+
  
- 
-%Information to be included in the title page:
+% TITLE PAGE -------------------------------------------------------
+
 \title{Predicting Airbnb User Booking Destinations}
 \author{Lisa Oshita\\Dr. Glanz}
-
 
 \begin{document}
  
 \frame{\titlepage}
 
-% background information about the competition
+% BACKGROUND INFO -------------------------------------------------
+
 \begin{frame}
 \frametitle{About the Competition}
   \begin{itemize}
@@ -24,8 +24,8 @@
   \end{itemize}
 \end{frame}
 
-% about train_users and sessions data
-% increase spacing between train_users and sessions 
+% ABOUT THE DATA --------------------------------------------------
+
 \begin{frame}
 \frametitle{About the Data}
 \begin{itemize}
@@ -44,7 +44,8 @@
 \end{itemize}
 \end{frame}
 
-% talk about the imbalanced classes - present a problem later in analysis 
+% IMBALANCED CLASSES ----------------------------------------------
+
 \begin{frame}
 \frametitle{Booking Destinations: Extremely Imbalanced Classes}
 \begin{table}[ht]
@@ -72,8 +73,8 @@
 \end{table}
 \end{frame}
 
-% models explored
-% explain why I chose these three models 
+% MODELS EXPLORED -------------------------------------------------
+
 \begin{frame}
 \frametitle{Models}
   \begin{itemize}
@@ -83,7 +84,8 @@
   \end{itemize}
 \end{frame}
 
-% feature engineering 
+% FEATURE ENGINEERING ---------------------------------------------
+
 \begin{frame}
 \frametitle{Feature Engineering}
 \begin{itemize}
@@ -93,6 +95,8 @@
   \item Summary statistics of seconds elapsed for each user’s web session
 \end{itemize}
 \end{frame}
+
+% FEATURE IMPORTANCE ----------------------------------------------
 
 \begin{frame}
 \frametitle{Model Building: Feature Importance}
@@ -104,9 +108,10 @@
 \end{itemize}
 \end{frame}
 
+% FEATURE IMPORTANCE TABLE ----------------------------------------
+
 \begin{frame}
 \frametitle{Model Building: Feature Importance}
-
 \begin{table}[ht]
 \centering
 \begin{tabular}{| l | l |}
@@ -127,10 +132,10 @@
 \end{tabular}
 \caption{Top 10 most import features for each model}
 \end{table}
-
 \end{frame}
 
-% ----------------------------------------------------------------
+% OVERSAMPLING ----------------------------------------------------
+
 \begin{frame}
 \frametitle{Model Building: Accounting for Imbalanced Classes}
 \begin{itemize}
@@ -143,6 +148,8 @@
 \end{itemize}
 \end{frame}
 
+% OVERSAMPLING RESULTS --------------------------------------------
+
 \begin{frame}
 \frametitle{Model Building: Results of Oversampling Techniques}
 \begin{itemize}
@@ -154,7 +161,7 @@
 \end{figure}
 \end{frame}
 
-% ----------------------------------------------------------------
+% STACKED MODELING ------------------------------------------------
 
 \begin{frame}
 \frametitle{Model Building: Stacked Modeling}
@@ -168,6 +175,8 @@
 \end{itemize}
 \end{frame}
 
+% RESULTS OF STACKING ---------------------------------------------
+
 \begin{frame}
 \frametitle{Model Building: Results of Stacking}
 \begin{itemize}
@@ -178,6 +187,8 @@
 \caption{Confusion matrix of stacked model predictions, trained on the regular over-sampled training set}
 \end{figure}
 \end{frame}
+
+% CV ON FULL DATA -------------------------------------------------
 
 \begin{frame}
 \frametitle{Model Building: Last Steps}
@@ -193,6 +204,8 @@
 \end{itemize}
 \end{frame}
 
+% MODEL PERFORMANCE DISCUSSION ------------------------------------
+
 \begin{frame}
 \frametitle{Discussion: Model Performance}
 \begin{itemize}
@@ -200,6 +213,8 @@
   \item Base classifiers of the stacked model performed poorly in similar ways
 \end{itemize}
 \end{frame}
+
+% NEXT STEPS ------------------------------------------------------
 
 \begin{frame}
 \frametitle{Discussion: Next Steps}
@@ -210,6 +225,8 @@
   \item Parameter tuning
 \end{itemize}
 \end{frame}
+
+% END -------------------------------------------------------------
 
 \begin{frame}
 Thank you!
