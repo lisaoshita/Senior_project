@@ -3,6 +3,11 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}% http://ctan.org/pkg/lm
 
+% for table formatting
+\usepackage{multirow}
+\usepackage{color,soul}
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
  
 % TITLE PAGE -------------------------------------------------------
 
@@ -31,7 +36,7 @@
 \begin{itemize}
   \item \textbf{train\_users} 
   \begin{itemize}
-    \item 213,415 observations and 16 rows
+    \item 213,415 observations and 16 variables
     \item Contains information about users from 2010 to 2014 \vspace{2ex}
   \end{itemize}
   \item \textbf{sessions}
@@ -42,35 +47,6 @@
     \item New sampled data contained 104,424 rows  
   \end{itemize}
 \end{itemize}
-\end{frame}
-
-% IMBALANCED CLASSES ----------------------------------------------
-
-\begin{frame}
-\frametitle{Booking Destinations: Extremely Imbalanced Classes}
-\begin{table}[ht]
-\centering
-\begin{tabular}{| r |c |}
-  \hline
-  \textbf{Destination} & \textbf{Percentage of the data (\%)} \\ 
-  \hline
-  NDF & 58.35 \\ 
-  US & 29.22 \\ 
-  other & 4.73 \\ 
-  FR & 2.35 \\ 
-  IT & 1.33 \\ 
-  GB & 1.09 \\ 
-  ES & 1.05 \\ 
-  CA & 0.67 \\ 
-  DE & 0.50 \\ 
-  NL & 0.36 \\ 
-  AU & 0.25 \\ 
-  PT & 0.10 \\ 
-   \hline
-\end{tabular}
-\caption{Percentage of data each destination accounts for}
-\label{table:countries}
-\end{table}
 \end{frame}
 
 % MODELS EXPLORED -------------------------------------------------
@@ -94,6 +70,25 @@
   \item Count features created from the sessions data (e.g. number of times a user viewed recent reservations, number of times a user viewed similar listings...)
   \item Summary statistics of seconds elapsed for each user’s web session
 \end{itemize}
+\end{frame}
+
+% IMBALANCED CLASSES ----------------------------------------------
+
+\begin{frame}
+\frametitle{Booking Destinations: Extremely Imbalanced Classes}
+\begin{columns}
+  \begin{column}{0.45\textwidth}
+      \begin{figure}
+        \includegraphics[width = 1.0\textwidth]{pie_chart_dest.pdf} 
+      \end{figure}
+  \end{column}
+  \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \includegraphics[width = 1.0\textwidth]{dest_table.png} 
+        \caption{Percentage of bookings made to each destination}
+      \end{figure}
+  \end{column}
+  \end{columns}
 \end{frame}
 
 % FEATURE IMPORTANCE ----------------------------------------------
