@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  28 MAY 2018 19:34
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  30 MAY 2018 15:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1273,32 +1273,34 @@ LaTeX Font Info:    Font shape `OT1/lmss/m/it' in size <5> not available
 
 ] [5
 
-] <pie_chart_dest.pdf, id=147, 578.16pt x 505.89pt>
+] [6
+
+]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 111.
+LaTeX Font Info:    Font shape `OT1/lmss/m/it' in size <10.95> not available
+(Font)              Font shape `OT1/lmss/m/sl' tried instead on input line 111.
+
+ [7
+
+] <pie_chart_dest.pdf, id=198, 578.16pt x 505.89pt>
 File: pie_chart_dest.pdf Graphic file (type pdf)
 
 <use pie_chart_dest.pdf>
-Package pdftex.def Info: pie_chart_dest.pdf used on input line 92.
+Package pdftex.def Info: pie_chart_dest.pdf used on input line 130.
 (pdftex.def)             Requested size: 138.2795pt x 120.99152pt.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 92.
-LaTeX Font Info:    Font shape `OT1/lmss/m/it' in size <10.95> not available
-(Font)              Font shape `OT1/lmss/m/sl' tried instead on input line 92.
- <dest_table.png, id=148, 727.71875pt x 582.175pt>
+ <dest_table.png, id=199, 727.71875pt x 582.175pt>
 File: dest_table.png Graphic file (type png)
 
 <use dest_table.png>
-Package pdftex.def Info: dest_table.png used on input line 92.
+Package pdftex.def Info: dest_table.png used on input line 130.
 (pdftex.def)             Requested size: 169.01036pt x 135.20326pt.
- [6
+ [8
 
- <./pie_chart_dest.pdf> <./dest_table.png>] [7
-
-] [8
+ <./pie_chart_dest.pdf> <./dest_table.png>] [9
 
 ]
-[9
-
-] <confusion_matrix.png, id=258, 1326.9575pt x 558.085pt>
+<confusion_matrix.png, id=258, 1326.9575pt x 558.085pt>
 File: confusion_matrix.png Graphic file (type png)
 
 <use confusion_matrix.png>
@@ -1358,7 +1360,7 @@ texlive/2017/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/local/texlive/20
 ist/fonts/type1/public/lm/lmssbx10.pfb></usr/local/texlive/2017/texmf-dist/font
 s/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2017/texmf-dist/
 fonts/type1/public/amsfonts/symbols/msam7.pfb>
-Output written on presentation.pdf (16 pages, 571890 bytes).
+Output written on presentation.pdf (16 pages, 571927 bytes).
 PDF statistics:
  465 PDF objects out of 1000 (max. 8388607)
  423 compressed objects within 5 object streams

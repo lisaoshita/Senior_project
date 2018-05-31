@@ -99,7 +99,20 @@ xtable::xtable(feature_imp_df[1:20, ])
 xtable::xtable(importance[1:20, ])
 ```
 
+```{r}
+table <- as.data.frame(table(training$country_destination))
+colnames(table) <- c("Destination", "Frequency")
 
+ggplot(data = table, aes(x = factor(1), y = Frequency, fill = Destination)) + 
+  geom_bar(width = 1, stat = "identity") + 
+  coord_polar(theta = "y") + 
+  ylab("") + xlab("") + 
+  ggtitle("Pie Chart of Booking Destinations") +
+  theme(text = element_text(size = 25),
+        axis.text = element_blank())
+
+ggsave(filename = "pie_chart_dest.pdf", width = 8, height = 7)
+```
 
 
 
